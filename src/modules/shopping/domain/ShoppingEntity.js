@@ -1,0 +1,1 @@
+// ShoppingEntity.js
