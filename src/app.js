@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import productCategoryRouter from "./modules/productCategory/infrastructure/ProductCategoryRoutes.js"
 import documentTypeRouter from "./shared/infrastructure/routes/DocumentTypeRoutes.js";
+import providerRouter from "./modules/providers/infrastructure/ProviderRoutes.js"
 
 const app = express();
 
@@ -11,5 +12,6 @@ app.use(express.json());
 app.use("/api/documentTypes", documentTypeRouter);
 
 app.use("/api/productCategory", productCategoryRouter);
+app.use("/api/providers", providerRouter);
 
 export default app;
