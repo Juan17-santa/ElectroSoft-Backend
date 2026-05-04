@@ -1,1 +1,88 @@
-// ShoppingModel.js
+/**
+ * Modelo de persistencia MongoDB para compras.
+ *
+ * Define cómo se almacena una compra en la base de datos.
+ * Este archivo pertenece a infrastructure, por eso puede usar Mongoose.
+ *
+ * Campos principales:
+ * - proveedorId: identificador externo del proveedor.
+ * - productos: productos comprados dentro de la compra.
+ * - total: total calculado por el caso de uso.
+ * - estado: ACTIVA o ANULADA.
+ * - impactApplied: marca de impacto simulado.
+ * - fechaCompra: fecha de factura en formato DD/MM/YYYY.
+ * - fechaCreacion: fecha de registro en sistema.
+ * - anuladaEn: fecha de anulación.
+ */
+import mongoose from "mongoose";
+
+// Subdocumento de producto comprado.
+const shoppingProductSchema = new mongoose.Schema(
+    {
+        productoId: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        cantidad: {
+            type: Number,
+            required: true,
+            min: 1,
+        },
+        precioCompra: {
+            type: Number,
+            required: true,
+            min: 1,
+        },
+    },
+    { _id: false },
+);
+
+// Documento principal de compra.
+const shoppingSchema = new mongoose.Schema({
+    proveedorId: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    productos: {
+        type: [shoppingProductSchema],
+        required: true,
+        validate: {
+            validator: (value) => Array.isArray(value) && value.length > 0,
+            message: "La compra debe tener al menos un producto",
+        },
+    },
+    total: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+    estado: {
+        type: String,
+        required: true,
+        default: "ACTIVA",
+        enum: ["ACTIVA", "ANULADA"],
+    },
+    impactApplied: {
+        type: Boolean,
+        required: true,
+        default: false,
+    },
+    fechaCompra: {
+        type: String,
+        required: false,
+        default: "",
+    },
+    fechaCreacion: {
+        type: Date,
+        required: true,
+        default: Date.now,
+    },
+    anuladaEn: {
+        type: Date,
+        default: null,
+    },
+});
+
+export const shoppingModel = mongoose.model("shopping", shoppingSchema);
