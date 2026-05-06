@@ -13,7 +13,7 @@
  */
 
 import { Router } from "express";
-import { changeStatusProductCategory, createProductCategory, deleteProductCategory, getProductCategory, getProductCategoryById, updateProductCategory } from "./ProductCategoryController.js";
+import { changeStatusProductCategory, createProductCategory, deleteProductCategory, getProductCategory, getProductCategoryById, updateProductCategory } from "./ProductCategory.Controller.js";
 
 const router = Router();
 

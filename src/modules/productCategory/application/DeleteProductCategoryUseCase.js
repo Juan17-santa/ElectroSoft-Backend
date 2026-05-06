@@ -8,10 +8,9 @@
  */
 
 export default class DeleteProductCategoryUseCase {
-    constructor(productCategoryRepository, providerRepository) {
-        // constructor(productCategoryRepository, productRepository, providerRepository) {
+    constructor(productCategoryRepository, productRepository, providerRepository) {
         this.productCategoryRepository = productCategoryRepository;
-        // this.productRepository = productRepository;
+        this.productRepository = productRepository;
         this.providerRepository = providerRepository;
     }
 
@@ -23,23 +22,19 @@ export default class DeleteProductCategoryUseCase {
         }
 
         // Verificar que no tenga productos o proveedores asociados
-        // const products = await this.productRepository.findByCategoryId(id);
+        const products = await this.productRepository.findByCategoryId(id);
         const providers = await this.providerRepository.findByCategoryId(id);
 
-        // if (products.length > 0 || providers.length > 0) {
-        //     let mensaje = "No se puede eliminar: esta categoría tiene ";
+        if (products.length > 0 || providers.length > 0) {
+            let mensaje = "No se puede eliminar: esta categoría tiene ";
 
-        //     if (products.length > 0) mensaje += "productos";
-        //     if (products.length > 0 && providers.length > 0) mensaje += " y ";
-        //     if (providers.length > 0) mensaje += "proveedores";
+            if (products.length > 0) mensaje += `${products.length} producto(s)`;
+            if (products.length > 0 && providers.length > 0) mensaje += " y ";
+            if (providers.length > 0) mensaje += `${providers.length} proveedor(es)`;
 
-        //     mensaje += " asociados.";
+            mensaje += " asociados.";
 
-        //     throw new Error(mensaje);
-        // }
-
-        if (providers.length > 0) {
-            throw new Error("No se puede eliminar: esta categoría tiene proveedores asociados.");
+            throw new Error(mensaje);
         }
 
         // Eliminar la categoría

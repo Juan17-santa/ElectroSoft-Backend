@@ -13,7 +13,7 @@
  */
 
 import { Router } from "express";
-import { createProduct, getProducts, getProductById, updateProduct, deleteProduct, changeStatusProduct } from "./ProductController.js";
+import { createProduct, getProducts, getProductById, updateProduct, deleteProduct, changeStatusProduct } from "./Product.Controller.js";
 
 const router = Router();
 
