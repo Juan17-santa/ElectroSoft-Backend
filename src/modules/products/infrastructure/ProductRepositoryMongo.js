@@ -38,9 +38,6 @@ class ProductRepositoryMongo {
     async findByCategoryId(categoryId) {
         return await productModel.find({ categoriaId: categoryId });
     }
-    async findByCategoryId(categoryId) {
-        return await ProductModel.find({ categoriaId: categoryId });
-    }
 
     async update(id, productData) {
         return await productModel.findByIdAndUpdate(id, productData, { new: true }).populate("categoriaId", "name description status");

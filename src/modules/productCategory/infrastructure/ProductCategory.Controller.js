@@ -28,9 +28,9 @@ import GetProductCategoryUseCase from "../application/GetProductCategoryUseCase.
 import CreateProductCategoryUseCase from "../application/CreateProductCategoryUseCase.js";
 import ProductCategoryRepositoryMongo from "./ProductCategoryRepositoryMongo.js";
 import ProviderRepositoryMongo from "../../providers/infrastructure/ProviderRepositoryMongo.js";
-// import ProductRepositoryMongo from "../../products/infrastructure/ProductRepositoryMongo";
+import ProductRepositoryMongo from "../../products/infrastructure/ProductRepositoryMongo.js";
 
-// const productRepository = new ProductRepositoryMongo();
+const productRepository = new ProductRepositoryMongo();
 const providerRepository = new ProviderRepositoryMongo();
 const productCategoryRepository = new ProductCategoryRepositoryMongo();
 
@@ -94,8 +94,8 @@ export const deleteProductCategory = async (req, res) => {
             return res.status(400).json({ error: "ID inválido" });
         }
 
-        const useCase = new DeleteProductCategoryUseCase(productCategoryRepository, providerRepository);
-        // const useCase = new DeleteProductCategoryUseCase(productCategoryRepository, productRepository, providerRepository);
+        // const useCase = new DeleteProductCategoryUseCase(productCategoryRepository, providerRepository);
+        const useCase = new DeleteProductCategoryUseCase(productCategoryRepository, productRepository, providerRepository);
 
         // NOTA:
         // Este caso de uso debería validar que la categoría no tenga
