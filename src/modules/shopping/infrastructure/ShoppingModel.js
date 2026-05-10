@@ -34,12 +34,22 @@ const shoppingProductSchema = new mongoose.Schema(
             required: true,
             min: 1,
         },
+        precioVenta: {
+            type: Number,
+            required: true,
+            min: 1,
+        },
     },
     { _id: false },
 );
 
 // Documento principal de compra.
 const shoppingSchema = new mongoose.Schema({
+    numeroFactura: {
+        type: String,
+        required: true,
+        trim: true,
+    },
     proveedorId: {
         type: String,
         required: true,
@@ -84,5 +94,7 @@ const shoppingSchema = new mongoose.Schema({
         default: null,
     },
 });
+
+shoppingSchema.index({ numeroFactura: 1, estado: 1 });
 
 export const shoppingModel = mongoose.model("shopping", shoppingSchema);

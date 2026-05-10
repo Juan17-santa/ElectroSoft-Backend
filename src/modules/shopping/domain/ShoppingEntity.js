@@ -1,23 +1,6 @@
-/**
- * Entidad de compra.
- *
- * Representa la lógica de negocio mínima del módulo Shopping.
- * Esta entidad es autocontenida: no consulta productos, proveedores ni inventario.
- *
- * Validaciones:
- * - El proveedorId es obligatorio.
- * - La compra debe tener al menos un producto.
- * - Cada producto debe tener productoId.
- * - La cantidad de cada producto debe ser mayor a 0.
- * - El precioCompra de cada producto debe ser mayor a 0.
- *
- * Nota:
- * - El impacto en inventario se simula con impactApplied.
- * - La conexión futura con otros módulos debe hacerse desde nuevos casos de uso,
- *   sin contaminar esta entidad con dependencias externas.
- */
 export default class ShoppingEntity {
     constructor({
+        numeroFactura,
         proveedorId,
         productos,
         total = 0,
@@ -27,36 +10,45 @@ export default class ShoppingEntity {
         fechaCreacion = new Date(),
         anuladaEn = null,
     }) {
-        // VALIDACIÓN: PROVEEDOR
+        if (!numeroFactura || !/^\d+$/.test(String(numeroFactura).trim())) {
+            throw new Error("El numeroFactura es obligatorio y solo debe contener numeros");
+        }
+
         if (!proveedorId) throw new Error("El proveedorId es obligatorio");
 
-        // VALIDACIÓN: PRODUCTOS
         if (!Array.isArray(productos) || productos.length === 0) {
             throw new Error("La compra debe tener al menos un producto");
         }
 
         productos.forEach((producto, index) => {
-            // VALIDACIÓN: PRODUCTO
+            const cantidad = Number(producto.cantidad);
+            const precioCompra = Number(producto.precioCompra);
+            const precioVenta = Number(producto.precioVenta);
+
             if (!producto.productoId) {
                 throw new Error(`El productoId es obligatorio en el producto ${index + 1}`);
             }
 
-            // VALIDACIÓN: CANTIDAD
-            if (Number(producto.cantidad) <= 0) {
+            if (!Number.isFinite(cantidad) || cantidad <= 0) {
                 throw new Error(`La cantidad debe ser mayor a 0 en el producto ${index + 1}`);
             }
 
-            // VALIDACIÓN: PRECIO DE COMPRA
-            if (Number(producto.precioCompra) <= 0) {
+            if (!Number.isFinite(precioCompra) || precioCompra <= 0) {
                 throw new Error(`El precioCompra debe ser mayor a 0 en el producto ${index + 1}`);
+            }
+
+            if (!Number.isFinite(precioVenta) || precioVenta <= precioCompra) {
+                throw new Error(`El precioVenta debe ser mayor al precioCompra en el producto ${index + 1}`);
             }
         });
 
+        this.numeroFactura = String(numeroFactura).trim();
         this.proveedorId = proveedorId;
         this.productos = productos.map((producto) => ({
             productoId: producto.productoId,
             cantidad: Number(producto.cantidad),
             precioCompra: Number(producto.precioCompra),
+            precioVenta: Number(producto.precioVenta),
         }));
         this.total = Number(total);
         this.estado = estado;
@@ -66,12 +58,6 @@ export default class ShoppingEntity {
         this.anuladaEn = anuladaEn;
     }
 
-    /**
-     * Calcula el total de la compra a partir de sus productos.
-     *
-     * El backend no confía en totales enviados por cliente.
-     * Esta base solo usa cantidad * precioCompra.
-     */
     calculateTotal() {
         this.total = this.productos.reduce(
             (acc, producto) => acc + producto.cantidad * producto.precioCompra,
