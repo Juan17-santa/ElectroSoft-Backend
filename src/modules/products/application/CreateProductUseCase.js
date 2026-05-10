@@ -16,24 +16,24 @@ export default class CreateProductUseCase {
     }
 
     async execute(productData) {
-        const { nombre, categoriaId, precio, stock, tipoStock, serial, garantia, caracteristicas } = productData;
+        const { name, categoryId, price, stock, typeStock, serial, warranty, characteristics } = productData;
 
         // Verificar que la categoría exista
-        const category = await this.productCategoryRepository.findById(categoriaId);
+        const category = await this.productCategoryRepository.findById(categoryId);
         if (!category) {
             throw new Error("La categoría seleccionada no existe");
         }
 
         // Crear la entidad (aquí se validan reglas de negocio)
         const product = new ProductEntity({
-            nombre,
-            categoriaId,
-            precio: Number(precio),
+            name,
+            categoryId,
+            price: Number(price),
             stock: Number(stock),
-            tipoStock,
+            typeStock,
             serial,
-            garantia,
-            caracteristicas: caracteristicas || []
+            warranty,
+            characteristics: characteristics || []
         });
 
         // Guardar en base de datos
