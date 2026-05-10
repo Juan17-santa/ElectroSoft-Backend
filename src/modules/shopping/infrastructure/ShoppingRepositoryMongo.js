@@ -25,6 +25,12 @@ export default class ShoppingRepositoryMongo {
         return await shoppingModel.findById(id).session(session);
     }
 
+    async findActiveByInvoice(numeroFactura, session = null) {
+        return await shoppingModel
+            .findOne({ numeroFactura: String(numeroFactura).trim(), estado: "ACTIVA" })
+            .session(session);
+    }
+
     async update(id, data, session) {
         return await shoppingModel.findByIdAndUpdate(id, data, {
             new: true,

@@ -29,9 +29,25 @@ function parseInvoiceDateEndOfDay(fechaCompra) {
         throw new Error("La fechaCompra es obligatoria para anular la compra");
     }
 
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaCompra)) {
+        const [year, month, day] = fechaCompra.split("-").map(Number);
+        const parsedDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+        if (
+            Number.isNaN(parsedDate.getTime()) ||
+            parsedDate.getFullYear() !== year ||
+            parsedDate.getMonth() !== month - 1 ||
+            parsedDate.getDate() !== day
+        ) {
+            throw new Error("La fechaCompra no es valida");
+        }
+
+        return parsedDate;
+    }
+
     const parts = fechaCompra.split("/");
     if (parts.length !== 3) {
-        throw new Error("La fechaCompra debe tener formato DD/MM/YYYY");
+        throw new Error("La fechaCompra debe tener formato DD/MM/YYYY o YYYY-MM-DD");
     }
 
     const [day, month, year] = parts.map(Number);
@@ -78,6 +94,25 @@ export default class CancelShoppingUseCase {
     constructor(shoppingRepository, transactionManager) {
         this.shoppingRepository = shoppingRepository;
         this.transactionManager = transactionManager;
+    }
+
+    async validate(id) {
+        const shopping = await this.shoppingRepository.findById(id);
+
+        if (!shopping) {
+            throw new Error("Compra no encontrada");
+        }
+
+        if (shopping.estado !== "ACTIVA") {
+            throw new Error("Solo se pueden anular compras activas");
+        }
+
+        validateCancellationWindow(shopping, new Date());
+
+        return {
+            puedeAnularse: true,
+            razon: "",
+        };
     }
 
     async execute(id) {

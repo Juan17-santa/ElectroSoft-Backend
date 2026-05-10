@@ -13,13 +13,17 @@ import { Router } from "express";
 import {
     cancelShopping,
     createShopping,
+    getShoppingCancellationStatus,
     getShopping,
     getShoppingById,
-} from "./ShoppingController.js";
+    rejectGetCancelShopping,
+} from "./Shopping.Controller.js";
 
 const router = Router();
 
 router.post("/", createShopping);
+router.get("/:id/cancellation-status", getShoppingCancellationStatus);
+router.get("/:id/cancel", rejectGetCancelShopping);
 router.patch("/:id/cancel", cancelShopping);
 router.get("/", getShopping);
 router.get("/:id", getShoppingById);

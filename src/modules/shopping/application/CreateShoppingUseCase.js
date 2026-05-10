@@ -29,6 +29,15 @@ export default class CreateShoppingUseCase {
         try {
             session.startTransaction();
 
+            const existingShopping = await this.shoppingRepository.findActiveByInvoice(
+                shoppingData.numeroFactura,
+                session,
+            );
+
+            if (existingShopping) {
+                throw new Error("El numero de factura ya esta en uso en una compra activa");
+            }
+
             // Crea la entidad y ejecuta validaciones de negocio.
             const shopping = new ShoppingEntity({
                 ...shoppingData,
