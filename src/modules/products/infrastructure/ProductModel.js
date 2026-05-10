@@ -17,23 +17,23 @@
 
 import mongoose from "mongoose";
 
-const caracteristicaSchema = new mongoose.Schema({
-    nombre: { type: String, required: true },
-    medida: { type: String, default: "-" },
-    valor: { type: String, default: "" },
+const featureSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    unit: { type: String, default: "-" },
+    value: { type: String, default: "" },
     visible: { type: Boolean, default: true }
 }, { _id: true });
 
 const productSchema = new mongoose.Schema({
-    nombre: { type: String, required: true },
-    categoriaId: { type: mongoose.Schema.Types.ObjectId, ref: "ProductCategory", required: true },
-    precio: { type: Number, required: true },
+    name: { type: String, required: true },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "ProductCategory", required: true },
+    price: { type: Number, required: true },
     stock: { type: Number, required: true },
-    tipoStock: { type: String, enum: ["unidad", "metros"], required: true },
+    typeStock: { type: String, enum: ["unidad", "metros"], required: true },
     serial: { type: String, required: true },
-    garantia: { type: String, enum: ["3 meses", "6 meses", "9 meses", "12 meses"], required: true },
-    caracteristicas: [caracteristicaSchema],
-    estado: { type: Boolean, default: true }
+    warranty: { type: String, enum: ["3 meses", "6 meses", "9 meses", "12 meses"], required: true },
+    characteristics: [featureSchema],
+    status: { type: Boolean, default: true }
 }, {
     timestamps: true
 });

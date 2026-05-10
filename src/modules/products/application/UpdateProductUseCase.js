@@ -21,7 +21,7 @@ export default class UpdateProductUseCase {
     }
 
     async execute(id, productData) {
-        const { nombre, categoriaId, precio, stock, tipoStock, serial, garantia, caracteristicas } = productData;
+        const { name, categoryId, price, stock, typeStock, serial, warranty, characteristics } = productData;
 
         // Verificar que el producto existe
         const existingProduct = await this.productRepository.findById(id);
@@ -30,8 +30,8 @@ export default class UpdateProductUseCase {
         }
 
         // Verificar que la categoría exista
-        if (categoriaId) {
-            const category = await this.productCategoryRepository.findById(categoriaId);
+        if (categoryId) {
+            const category = await this.productCategoryRepository.findById(categoryId);
             if (!category) {
                 throw new Error("La categoría seleccionada no existe");
             }
@@ -39,10 +39,10 @@ export default class UpdateProductUseCase {
 
         // Validar las características editadas
         // Solo se permite: cambiar visible y eliminar. No editar textos.
-        if (caracteristicas && Array.isArray(caracteristicas)) {
-            const existingChars = existingProduct.caracteristicas || [];
+        if (characteristics && Array.isArray(characteristics)) {
+            const existingChars = existingProduct.characteristics || [];
 
-            for (const newChar of caracteristicas) {
+            for (const newChar of characteristics) {
                 // Buscar si la característica ya existía (por _id)
                 const originalChar = existingChars.find(
                     c => c._id && newChar._id && c._id.toString() === newChar._id.toString()
@@ -51,9 +51,9 @@ export default class UpdateProductUseCase {
                 if (originalChar) {
                     // Si existe, verificar que no se editaron los textos
                     if (
-                        originalChar.nombre !== newChar.nombre ||
-                        originalChar.medida !== newChar.medida ||
-                        originalChar.valor !== newChar.valor
+                        originalChar.name !== newChar.name ||
+                        originalChar.unit !== newChar.unit ||
+                        originalChar.value !== newChar.value
                     ) {
                         throw new Error("No se pueden editar los textos de las características existentes. Solo puede cambiar la visibilidad o eliminarlas.");
                     }
@@ -64,27 +64,27 @@ export default class UpdateProductUseCase {
         // Crear la entidad con los datos actualizados (aquí se validan reglas)
         const updatedProduct = new ProductEntity({
             id,
-            nombre,
-            categoriaId,
-            precio: Number(precio),
+            name,
+            categoryId,
+            price: Number(price),
             stock: Number(stock),
-            tipoStock,
+            typeStock,
             serial,
-            garantia,
-            caracteristicas: caracteristicas || existingProduct.caracteristicas,
-            estado: existingProduct.estado
+            warranty,
+            characteristics: characteristics || existingProduct.characteristics,
+            status: existingProduct.status
         });
 
         // Actualizar en base de datos
         return await this.productRepository.update(id, {
-            nombre: updatedProduct.nombre,
-            categoriaId: updatedProduct.categoriaId,
-            precio: updatedProduct.precio,
+            name: updatedProduct.name,
+            categoryId: updatedProduct.categoryId,
+            price: updatedProduct.price,
             stock: updatedProduct.stock,
-            tipoStock: updatedProduct.tipoStock,
+            typeStock: updatedProduct.typeStock,
             serial: updatedProduct.serial,
-            garantia: updatedProduct.garantia,
-            caracteristicas: updatedProduct.caracteristicas
+            warranty: updatedProduct.warranty,
+            characteristics: updatedProduct.characteristics
         });
     }
 }
