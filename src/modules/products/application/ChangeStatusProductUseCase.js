@@ -21,11 +21,11 @@ export default class ChangeStatusProductUseCase {
         }
 
         // Cambiar el estado (si estaba activo, se desactiva y viceversa)
-        const newStatus = !product.estado;
+        const newStatus = !product.status;
 
         // Actualizar en base de datos
         return await this.productRepository.update(id, {
-            estado: newStatus
+            status: newStatus
         });
     }
 }
