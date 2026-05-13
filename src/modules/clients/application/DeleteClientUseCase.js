@@ -8,8 +8,6 @@ export default class DeleteClientUseCase {
 
         if (!existing) throw new Error('Cliente no encontrado');
 
-        await this.clientRepository.delete(id);
-
-        return { message: 'Cliente eliminado correctamente' };
+        return await this.clientRepository.delete(id);
     }
 }

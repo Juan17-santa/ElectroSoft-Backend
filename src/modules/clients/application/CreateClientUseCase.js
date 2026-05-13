@@ -7,24 +7,23 @@ export default class CreateClientUseCase {
     }
 
     async execute(clientData) {
-        const { firstName, lastName, email, phone, address, documentType, documentNumber } = clientData;
+        const { documentType, documentNumber, firstName, lastName, email, phone } = clientData;
+
+        const client = new Client({
+            documentType,
+            documentNumber,
+            firstName,
+            lastName,
+            email,
+            phone,
+            createdAt: new Date()
+        });
 
         // Validar que el tipo de documento existe
         const docTypeExists = await this.documentTypeRepository.findById(documentType);
         if (!docTypeExists) {
             throw new Error('El tipo de documento proporcionado no es válido');
         }
-
-        const client = new Client({
-            firstName,
-            lastName,
-            email,
-            phone,
-            address,
-            documentType,
-            documentNumber,
-            createdAt: new Date()
-        });
 
         return await this.clientRepository.create(client);
     }
