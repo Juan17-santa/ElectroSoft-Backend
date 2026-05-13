@@ -24,23 +24,23 @@ class ProductRepositoryMongo {
     }
 
     async findAll() {
-        return await productModel.find().populate("categoriaId", "name description status");
+        return await productModel.find().populate("categoryId", "name description status");
     }
 
     async findById(id) {
-        return await productModel.findById(id).populate("categoriaId", "name description status");
+        return await productModel.findById(id).populate("categoryId", "name description status");
     }
 
-    async findByName(nombre) {
-        return await productModel.findOne({ nombre });
+    async findByName(name) {
+        return await productModel.findOne({ name });
     }
 
     async findByCategoryId(categoryId) {
-        return await productModel.find({ categoriaId: categoryId });
+        return await productModel.find({ categoryId: categoryId });
     }
 
     async update(id, productData) {
-        return await productModel.findByIdAndUpdate(id, productData, { new: true }).populate("categoriaId", "name description status");
+        return await productModel.findByIdAndUpdate(id, productData, { new: true }).populate("categoryId", "name description status");
     }
 
     async delete(id) {

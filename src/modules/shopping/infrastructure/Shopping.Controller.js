@@ -31,7 +31,21 @@ const transactionManager = new ShoppingTransactionManagerMongo();
 export const createShopping = async (req, res) => {
     try {
         const useCase = new CreateShoppingUseCase(shoppingRepository, transactionManager);
-        const result = await useCase.execute(req.body);
+
+        // Mapeo del request HTTP al formato del dominio.
+        // El cliente puede enviar "id" y "costeProducto", pero el dominio
+        // espera "productoId" y "precioCompra".
+        const shoppingData = {
+            ...req.body,
+            productos: req.body.productos?.map((producto) => ({
+                productoId: producto.productoId ?? producto.id,
+                cantidad: producto.cantidad,
+                precioCompra: producto.precioCompra ?? producto.costeProducto,
+                precioVenta: producto.precioVenta,
+            })),
+        };
+
+        const result = await useCase.execute(shoppingData);
 
         res.status(201).json({
             message: "Compra registrada con exito",
@@ -79,4 +93,28 @@ export const getShoppingById = async (req, res) => {
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
+};
+
+// Valida si una compra activa se puede anular sin modificar datos.
+export const getShoppingCancellationStatus = async (req, res) => {
+    try {
+        const useCase = new CancelShoppingUseCase(shoppingRepository, transactionManager);
+        await useCase.validate(req.params.id);
+
+        res.json({
+            puedeAnularse: true,
+            razon: "",
+        });
+    } catch (error) {
+        res.json({
+            puedeAnularse: false,
+            razon: error.message,
+        });
+    }
+};
+
+export const rejectGetCancelShopping = (_req, res) => {
+    res.status(405).json({
+        error: "Metodo no permitido. Para anular una compra usa PATCH /api/shopping/:id/cancel",
+    });
 };

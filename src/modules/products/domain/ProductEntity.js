@@ -16,21 +16,21 @@
  */
 
 export default class ProductEntity {
-    constructor({ id, nombre, categoriaId, precio, stock, tipoStock, serial, garantia, caracteristicas, estado }) {
+    constructor({ productId, name, categoryId, price, stock, typeStock, serial, warranty, characteristics, status }) {
 
         // VALIDACIÓN: NOMBRE
-        if (!nombre) throw new Error("El nombre del producto es obligatorio");
-        if (typeof nombre !== "string") throw new Error("El nombre debe ser un texto");
-        if (nombre.trim().length < 3) throw new Error("El nombre debe tener mínimo 3 caracteres");
-        if (nombre.trim().length > 100) throw new Error("El nombre no puede exceder 100 caracteres");
+        if (!name) throw new Error("El nombre del producto es obligatorio");
+        if (typeof name !== "string") throw new Error("El nombre debe ser un texto");
+        if (name.trim().length < 3) throw new Error("El nombre debe tener mínimo 3 caracteres");
+        if (name.trim().length > 100) throw new Error("El nombre no puede exceder 100 caracteres");
 
         // VALIDACIÓN: CATEGORÍA
-        if (!categoriaId) throw new Error("La categoría es obligatoria");
+        if (!categoryId) throw new Error("La categoría es obligatoria");
 
         // VALIDACIÓN: PRECIO
-        if (precio === undefined || precio === null || precio === "") throw new Error("El precio es obligatorio");
-        if (typeof precio !== "number" || isNaN(precio)) throw new Error("El precio debe ser un número");
-        if (precio <= 0) throw new Error("El precio debe ser mayor a 0");
+        if (price === undefined || price === null || price === "") throw new Error("El precio es obligatorio");
+        if (typeof price !== "number" || isNaN(price)) throw new Error("El precio debe ser un número");
+        if (price <= 0) throw new Error("El precio debe ser mayor a 0");
 
         // VALIDACIÓN: STOCK
         if (stock === undefined || stock === null || stock === "") throw new Error("El stock es obligatorio");
@@ -39,8 +39,8 @@ export default class ProductEntity {
         if (!Number.isInteger(stock)) throw new Error("El stock debe ser un número entero");
 
         // VALIDACIÓN: TIPO DE STOCK
-        if (!tipoStock) throw new Error("El tipo de stock es obligatorio");
-        if (!["unidad", "metros"].includes(tipoStock)) throw new Error("El tipo de stock debe ser 'unidad' o 'metros'");
+        if (!typeStock) throw new Error("El tipo de stock es obligatorio");
+        if (!["unidad", "metros"].includes(typeStock)) throw new Error("El tipo de stock debe ser 'unidad' o 'metros'");
 
         // VALIDACIÓN: SERIAL
         if (!serial) throw new Error("El serial es obligatorio");
@@ -49,33 +49,33 @@ export default class ProductEntity {
         if (serial.trim().length > 50) throw new Error("El serial no puede exceder 50 caracteres");
 
         // VALIDACIÓN: GARANTÍA
-        if (!garantia) throw new Error("La garantía es obligatoria");
-        const garantiasValidas = ["3 meses", "6 meses", "9 meses", "12 meses"];
-        if (!garantiasValidas.includes(garantia)) throw new Error("La garantía debe ser: 3 meses, 6 meses, 9 meses o 12 meses");
+        if (!warranty) throw new Error("La garantía es obligatoria");
+        const ValidGuarantees = ["3 meses", "6 meses", "9 meses", "12 meses"];
+        if (!ValidGuarantees.includes(warranty)) throw new Error("La garantía debe ser: 3 meses, 6 meses, 9 meses o 12 meses");
 
         // VALIDACIÓN: CARACTERÍSTICAS (si se envían)
-        if (caracteristicas && Array.isArray(caracteristicas)) {
-            caracteristicas.forEach((caract, index) => {
-                if (!caract.nombre || !caract.nombre.trim()) {
+        if (characteristics && Array.isArray(characteristics)) {
+            characteristics.forEach((caract, index) => {
+                if (!caract.name || !caract.name.trim()) {
                     throw new Error(`La característica #${index + 1} debe tener un nombre`);
                 }
             });
         }
 
-        this.id = id;
-        this.nombre = nombre.trim();
-        this.categoriaId = categoriaId;
-        this.precio = precio;
+        this.productId = productId;
+        this.name = name.trim();
+        this.categoryId = categoryId;
+        this.price = price;
         this.stock = stock;
-        this.tipoStock = tipoStock;
+        this.typeStock = typeStock;
         this.serial = serial.trim();
-        this.garantia = garantia;
-        this.caracteristicas = (caracteristicas || []).map(c => ({
-            nombre: c.nombre.trim(),
-            medida: c.medida ? c.medida.trim() : "-",
-            valor: c.valor ? (typeof c.valor === "string" ? c.valor.trim() : String(c.valor)) : "",
+        this.warranty = warranty;
+        this.characteristics = (characteristics || []).map(c => ({
+            name: c.name.trim(),
+            unit: c.unit ? c.unit.trim() : "-",
+            value: c.value ? (typeof c.value === "string" ? c.value.trim() : String(c.value)) : "",
             visible: c.visible !== undefined ? c.visible : true
         }));
-        this.estado = estado !== undefined ? estado : true;
+        this.status = status !== undefined ? status : true;
     }
 }
