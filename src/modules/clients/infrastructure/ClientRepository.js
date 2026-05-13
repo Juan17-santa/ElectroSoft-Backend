@@ -6,18 +6,19 @@ export const clientRepository = {
     },
 
     findAll: async () => {
-        return await ClientModel.find();
+        return await ClientModel.find().populate('documentType');
     },
 
     findById: async (id) => {
-        return await ClientModel.findById(id);
+        return await ClientModel.findById(id).populate('documentType');
     },
 
     update: async (id, data) => {
-        return await ClientModel.findByIdAndUpdate(id, data, { new: true });
+        return await ClientModel.findByIdAndUpdate(id, data, { new: true }).populate('documentType');
     },
 
     delete: async (id) => {
         return await ClientModel.findByIdAndDelete(id);
     }
 };
+

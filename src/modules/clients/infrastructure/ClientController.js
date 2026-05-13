@@ -4,16 +4,20 @@ import GetClientByIdUseCase from '../application/GetClientByIdUseCase.js';
 import UpdateClientUseCase from '../application/UpdateClientUseCase.js';
 import DeleteClientUseCase from '../application/DeleteClientUseCase.js';
 import { clientRepository } from './ClientRepository.js';
+import DocumentTypeRepositoryMongo from '../../../shared/infrastructure/repositories/DocumentTypeRepositoryMongo.js';
+
+const documentTypeRepository = new DocumentTypeRepositoryMongo();
 
 export const createClient = async (req, res) => {
     try {
-        const useCase = new CreateClientUseCase(clientRepository);
+        const useCase = new CreateClientUseCase(clientRepository, documentTypeRepository);
         const client = await useCase.execute(req.body);
         res.status(201).json(client);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
+
 
 export const getClients = async (req, res) => {
     try {
@@ -37,13 +41,14 @@ export const getClientById = async (req, res) => {
 
 export const updateClient = async (req, res) => {
     try {
-        const useCase = new UpdateClientUseCase(clientRepository);
+        const useCase = new UpdateClientUseCase(clientRepository, documentTypeRepository);
         const client = await useCase.execute(req.params.id, req.body);
         res.status(200).json(client);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
+
 
 export const deleteClient = async (req, res) => {
     try {
