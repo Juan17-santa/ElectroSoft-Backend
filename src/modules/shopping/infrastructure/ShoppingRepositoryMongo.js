@@ -31,9 +31,15 @@ export default class ShoppingRepositoryMongo {
             .session(session);
     }
 
+    async findByProviderId(providerId) {
+        return await shoppingModel.find({
+            proveedorId: providerId
+        });
+    }
+    
     async update(id, data, session) {
         return await shoppingModel.findByIdAndUpdate(id, data, {
-            new: true,
+            returnDocument: "after",
             session,
             // Ejecuta validaciones declaradas en el schema al actualizar.
             runValidators: true,

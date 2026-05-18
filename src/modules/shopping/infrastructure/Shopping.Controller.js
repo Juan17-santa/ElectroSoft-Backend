@@ -21,16 +21,22 @@ import CancelShoppingUseCase from "../application/CancelShoppingUseCase.js";
 import CreateShoppingUseCase from "../application/CreateShoppingUseCase.js";
 import GetShoppingByIdUseCase from "../application/GetShoppingByIdUseCase.js";
 import GetShoppingUseCase from "../application/GetShoppingUseCase.js";
+import ShoppingExternalCatalogGatewayMongo from "./ShoppingExternalCatalogGatewayMongo.js";
 import ShoppingRepositoryMongo from "./ShoppingRepositoryMongo.js";
 import ShoppingTransactionManagerMongo from "./ShoppingTransactionManagerMongo.js";
 
 const shoppingRepository = new ShoppingRepositoryMongo();
+const externalCatalogGateway = new ShoppingExternalCatalogGatewayMongo();
 const transactionManager = new ShoppingTransactionManagerMongo();
 
-// Crea una compra y marca el impacto simulado.
+// Crea una compra y aplica su impacto de inventario.
 export const createShopping = async (req, res) => {
     try {
-        const useCase = new CreateShoppingUseCase(shoppingRepository, transactionManager);
+        const useCase = new CreateShoppingUseCase(
+            shoppingRepository,
+            transactionManager,
+            externalCatalogGateway,
+        );
 
         // Mapeo del request HTTP al formato del dominio.
         // El cliente puede enviar "id" y "costeProducto", pero el dominio
@@ -42,6 +48,7 @@ export const createShopping = async (req, res) => {
                 cantidad: producto.cantidad,
                 precioCompra: producto.precioCompra ?? producto.costeProducto,
                 precioVenta: producto.precioVenta,
+                usarPrecioSugerido: producto.usarPrecioSugerido ?? producto.sobreescribirConSugerido ?? false,
             })),
         };
 
@@ -59,7 +66,7 @@ export const createShopping = async (req, res) => {
 // Anula una compra activa si cumple la regla doble de 48 horas.
 export const cancelShopping = async (req, res) => {
     try {
-        const useCase = new CancelShoppingUseCase(shoppingRepository, transactionManager);
+        const useCase = new CancelShoppingUseCase(shoppingRepository, transactionManager, externalCatalogGateway);
         const result = await useCase.execute(req.params.id);
 
         res.json({
@@ -98,7 +105,7 @@ export const getShoppingById = async (req, res) => {
 // Valida si una compra activa se puede anular sin modificar datos.
 export const getShoppingCancellationStatus = async (req, res) => {
     try {
-        const useCase = new CancelShoppingUseCase(shoppingRepository, transactionManager);
+        const useCase = new CancelShoppingUseCase(shoppingRepository, transactionManager, externalCatalogGateway);
         await useCase.validate(req.params.id);
 
         res.json({

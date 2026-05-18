@@ -5,7 +5,7 @@
  * Este archivo pertenece a infrastructure, por eso puede usar Mongoose.
  *
  * Campos principales:
- * - proveedorId: identificador externo del proveedor.
+ * - proveedorId: referencia al proveedor.
  * - productos: productos comprados dentro de la compra.
  * - total: total calculado por el caso de uso.
  * - estado: ACTIVA o ANULADA.
@@ -20,9 +20,9 @@ import mongoose from "mongoose";
 const shoppingProductSchema = new mongoose.Schema(
     {
         productoId: {
-            type: String,
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
             required: true,
-            trim: true,
         },
         cantidad: {
             type: Number,
@@ -39,6 +39,11 @@ const shoppingProductSchema = new mongoose.Schema(
             required: true,
             min: 1,
         },
+        usarPrecioSugerido: {
+            type: Boolean,
+            required: true,
+            default: false,
+        },
     },
     { _id: false },
 );
@@ -51,9 +56,9 @@ const shoppingSchema = new mongoose.Schema({
         trim: true,
     },
     proveedorId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Provider",
         required: true,
-        trim: true,
     },
     productos: {
         type: [shoppingProductSchema],
