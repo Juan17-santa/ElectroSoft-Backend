@@ -1,29 +1,6 @@
-/**
- * Caso de uso para anular una compra.
- *
- * Responsabilidades:
- * - Iniciar una transacción de MongoDB.
- * - Buscar la compra.
- * - Validar que la compra esté ACTIVA.
- * - Validar la regla doble de 48 horas:
- *   1. Desde fechaCreacion.
- *   2. Desde fechaCompra en formato DD/MM/YYYY, tomando el fin del día.
- * - Marcar la compra como ANULADA.
- * - Registrar anuladaEn.
- *
- * Importante:
- * - No recalcula stock.
- * - No toca inventario real.
- * - La anulación solo cambia el estado dentro del módulo Shopping.
- */
 const HOURS_LIMIT = 48;
 const MILLISECONDS_PER_HOUR = 1000 * 60 * 60;
 
-/**
- * Convierte fechaCompra desde DD/MM/YYYY al final del día.
- *
- * Esta regla evita penalizar compras registradas el mismo día en horas tempranas.
- */
 function parseInvoiceDateEndOfDay(fechaCompra) {
     if (!fechaCompra || typeof fechaCompra !== "string") {
         throw new Error("La fechaCompra es obligatoria para anular la compra");
@@ -65,11 +42,6 @@ function parseInvoiceDateEndOfDay(fechaCompra) {
     return parsedDate;
 }
 
-/**
- * Valida la ventana máxima de 48 horas para anular.
- *
- * Si cualquiera de los dos controles falla, la compra no puede anularse.
- */
 function validateCancellationWindow(shopping, now) {
     const fechaCreacion = new Date(shopping.fechaCreacion);
 
@@ -91,9 +63,10 @@ function validateCancellationWindow(shopping, now) {
 }
 
 export default class CancelShoppingUseCase {
-    constructor(shoppingRepository, transactionManager) {
+    constructor(shoppingRepository, transactionManager, externalCatalogGateway = null) {
         this.shoppingRepository = shoppingRepository;
         this.transactionManager = transactionManager;
+        this.externalCatalogGateway = externalCatalogGateway;
     }
 
     async validate(id) {
@@ -116,13 +89,11 @@ export default class CancelShoppingUseCase {
     }
 
     async execute(id) {
-        // Inicia sesión para garantizar que lectura y actualización sean atómicas.
         const session = await this.transactionManager.startSession();
 
         try {
             session.startTransaction();
 
-            // La lectura participa en la misma sesión transaccional.
             const shopping = await this.shoppingRepository.findById(id, session);
 
             if (!shopping) {
@@ -136,7 +107,22 @@ export default class CancelShoppingUseCase {
             const now = new Date();
             validateCancellationWindow(shopping, now);
 
-            // Solo se marca estado; el impacto de inventario aún no existe.
+            if (!this.externalCatalogGateway) {
+                throw new Error("No se configuro el repositorio de productos para revertir inventario");
+            }
+
+            for (const producto of shopping.productos) {
+                const updatedProduct = await this.externalCatalogGateway.revertPurchaseEntry(
+                    producto.productoId,
+                    producto.cantidad,
+                    session,
+                );
+
+                if (!updatedProduct) {
+                    throw new Error("No se puede anular la compra porque el stock actual de un producto es menor a la cantidad comprada");
+                }
+            }
+
             const updatedShopping = await this.shoppingRepository.update(
                 id,
                 {
@@ -150,7 +136,6 @@ export default class CancelShoppingUseCase {
 
             return updatedShopping;
         } catch (error) {
-            // Si falla la validación o la actualización, se revierte la transacción.
             await session.abortTransaction();
             throw error;
         } finally {

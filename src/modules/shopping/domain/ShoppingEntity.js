@@ -49,6 +49,7 @@ export default class ShoppingEntity {
             cantidad: Number(producto.cantidad),
             precioCompra: Number(producto.precioCompra),
             precioVenta: Number(producto.precioVenta),
+            usarPrecioSugerido: producto.usarPrecioSugerido === true || producto.usarPrecioSugerido === "true",
         }));
         this.total = Number(total);
         this.estado = estado;
