@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import authRouter from "./modules/auth/infrastructure/AuthRoutes.js";
 import productCategoryRouter from "./modules/productCategory/infrastructure/ProductCategoryRoutes.js"
 import documentTypeRouter from "./shared/infrastructure/routes/DocumentTypeRoutes.js";
 import providerRouter from "./modules/providers/infrastructure/ProviderRoutes.js"
@@ -7,6 +8,8 @@ import shoppingRouter from "./modules/shopping/infrastructure/Shopping.Routes.js
 import devolutionRouter from "./modules/devolutions/infrastructure/DevolutionRoutes.js";
 import productRouter from "./modules/products/infrastructure/ProductRoutes.js";
 import clientRouter from "./modules/clients/infrastructure/ClientRoutes.js";
+import userRouter from "./modules/users/infrastructure/UserRoutes.js";
+import roleRouter from "./modules/roles/infrastructure/RoleRoutes.js";
 
 const app = express();
 
@@ -19,11 +22,15 @@ app.use((req, _res, next) => {
 
 app.use("/api/documentTypes", documentTypeRouter);
 
+
+app.use("/api/auth", authRouter);
 app.use("/api/productCategory", productCategoryRouter);
 app.use("/api/products", productRouter);
 app.use("/api/providers", providerRouter);
 app.use("/api/clients", clientRouter);
 app.use("/api/shopping", shoppingRouter);
 app.use("/api/devolutions", devolutionRouter);
+app.use("/api/users", userRouter);
+app.use("/api/roles", roleRouter);
 
 export default app;
