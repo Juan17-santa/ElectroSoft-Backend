@@ -10,6 +10,7 @@ import productRouter from "./modules/products/infrastructure/ProductRoutes.js";
 import clientRouter from "./modules/clients/infrastructure/ClientRoutes.js";
 import userRouter from "./modules/users/infrastructure/UserRoutes.js";
 import roleRouter from "./modules/roles/infrastructure/RoleRoutes.js";
+import saleRouter from "./modules/sales/infrastructure/SaleRoutes.js";
 
 const app = express();
 
@@ -32,5 +33,6 @@ app.use("/api/shopping", shoppingRouter);
 app.use("/api/devolutions", devolutionRouter);
 app.use("/api/users", userRouter);
 app.use("/api/roles", roleRouter);
+app.use("/api/sales", saleRouter);
 
 export default app;
