@@ -19,27 +19,27 @@ import mongoose from "mongoose";
 // Subdocumento de producto comprado.
 const shoppingProductSchema = new mongoose.Schema(
     {
-        productoId: {
+        productId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Product",
             required: true,
         },
-        cantidad: {
+        quantity: {
             type: Number,
             required: true,
             min: 1,
         },
-        precioCompra: {
+        purchasePrice: {
             type: Number,
             required: true,
             min: 1,
         },
-        precioVenta: {
+        salePrice: {
             type: Number,
             required: true,
             min: 1,
         },
-        usarPrecioSugerido: {
+        useSuggestedPrice: {
             type: Boolean,
             required: true,
             default: false,
@@ -50,17 +50,17 @@ const shoppingProductSchema = new mongoose.Schema(
 
 // Documento principal de compra.
 const shoppingSchema = new mongoose.Schema({
-    numeroFactura: {
+    invoiceNumber: {
         type: String,
         required: true,
         trim: true,
     },
-    proveedorId: {
+    providerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Provider",
         required: true,
     },
-    productos: {
+    products: {
         type: [shoppingProductSchema],
         required: true,
         validate: {
@@ -84,22 +84,22 @@ const shoppingSchema = new mongoose.Schema({
         required: true,
         default: false,
     },
-    fechaCompra: {
+    purchaseDate: {
         type: String,
         required: false,
         default: "",
     },
-    fechaCreacion: {
+    createdAt: {
         type: Date,
         required: true,
         default: Date.now,
     },
-    anuladaEn: {
+    cancelledAt: {
         type: Date,
         default: null,
     },
 });
 
-shoppingSchema.index({ numeroFactura: 1, estado: 1 });
+shoppingSchema.index({ invoiceNumber: 1, estado: 1 });
 
 export const shoppingModel = mongoose.model("shopping", shoppingSchema);

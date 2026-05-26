@@ -23,8 +23,8 @@ function isValidObjectId(id) {
     return new mongoose.Types.ObjectId(id).toString() === String(id);
 }
 
-function getUniqueProductIds(productos) {
-    return [...new Set(productos.map((producto) => String(producto.productoId)))];
+function getUniqueProductIds(products) {
+    return [...new Set(products.map((product) => String(product.productId)))];
 }
 
 function roundToNextHundred(value) {
@@ -51,7 +51,7 @@ export default class CreateShoppingUseCase {
             session.startTransaction();
 
             const existingShopping = await this.shoppingRepository.findActiveByInvoice(
-                shoppingData.numeroFactura,
+                shoppingData.invoiceNumber,
                 session,
             );
 
@@ -64,7 +64,7 @@ export default class CreateShoppingUseCase {
                 ...shoppingData,
                 estado: "ACTIVA",
                 impactApplied: false,
-                fechaCreacion: new Date(),
+                createdAt: new Date(),
             });
 
             const productsById = await this.validateReferences(shopping, session);
@@ -100,60 +100,60 @@ export default class CreateShoppingUseCase {
             throw new Error("No se configuraron los repositorios necesarios para validar la compra");
         }
 
-        if (!isValidObjectId(shopping.proveedorId)) {
-            throw new Error("El proveedorId no es un ObjectId valido");
+        if (!isValidObjectId(shopping.providerId)) {
+            throw new Error("The providerId is not a valid ObjectId");
         }
 
-        const productIds = getUniqueProductIds(shopping.productos);
-        const invalidProductIds = productIds.filter((productoId) => !isValidObjectId(productoId));
+        const productIds = getUniqueProductIds(shopping.products);
+        const invalidProductIds = productIds.filter((productId) => !isValidObjectId(productId));
 
         if (invalidProductIds.length > 0) {
-            throw new Error("Uno o mas productoId no son ObjectId validos");
+            throw new Error("One or more productId are not valid ObjectIds");
         }
-        const provider = await this.externalCatalogGateway.findProviderById(shopping.proveedorId, session);
+        const provider = await this.externalCatalogGateway.findProviderById(shopping.providerId, session);
 
         if (!provider) {
-            throw new Error("El proveedor asociado a la compra no existe");
+            throw new Error("The provider associated with the purchase does not exist");
         }
 
         const products = await this.externalCatalogGateway.findProductsByIds(productIds, session);
 
         if (products.length !== productIds.length) {
-            throw new Error("Uno o mas productos asociados a la compra no existen");
+            throw new Error("One or more products associated with the purchase do not exist");
         }
 
         return new Map(products.map((product) => [String(product._id), product]));
     }
 
     async applyInventoryImpact(shopping, productsById, session) {
-        for (const productoComprado of shopping.productos) {
-            const productoActual = productsById.get(String(productoComprado.productoId));
-            const stockAnterior = Number(productoActual.stock) || 0;
-            const precioAnterior = getCurrentInventoryPrice(productoActual);
-            const cantidadEntrada = Number(productoComprado.cantidad);
-            const stockNuevo = stockAnterior + cantidadEntrada;
+        for (const purchasedProduct of shopping.products) {
+            const currentProduct = productsById.get(String(purchasedProduct.productId));
+            const previousStock = Number(currentProduct.stock) || 0;
+            const previousPrice = getCurrentInventoryPrice(currentProduct);
+            const entryQuantity = Number(purchasedProduct.quantity);
+            const newStock = previousStock + entryQuantity;
 
-            const costoPromedioExacto = stockAnterior > 0
-                ? ((stockAnterior * precioAnterior) + (cantidadEntrada * productoComprado.precioVenta)) / stockNuevo
-                : productoComprado.precioVenta;
+            const exactAverageCost = previousStock > 0
+                ? ((previousStock * previousPrice) + (entryQuantity * purchasedProduct.salePrice)) / newStock
+                : purchasedProduct.salePrice;
 
-            const costoPromedio = roundToNextHundred(costoPromedioExacto);
-            const precioAplicado = productoComprado.usarPrecioSugerido
-                ? productoComprado.precioVenta
-                : costoPromedio;
+            const averageCost = roundToNextHundred(exactAverageCost);
+            const appliedPrice = purchasedProduct.useSuggestedPrice
+                ? purchasedProduct.salePrice
+                : averageCost;
 
             const updatedProduct = await this.externalCatalogGateway.applyPurchaseEntry(
-                productoComprado.productoId,
+                purchasedProduct.productId,
                 {
-                    cantidad: cantidadEntrada,
-                    precioAplicado,
-                    costoPromedio,
+                    quantity: entryQuantity,
+                    appliedPrice,
+                    averageCost,
                 },
                 session,
             );
 
             if (!updatedProduct) {
-                throw new Error("No se pudo actualizar el inventario de uno de los productos");
+                throw new Error("Could not update inventory for one of the products");
             }
 
             productsById.set(String(updatedProduct._id), updatedProduct);
