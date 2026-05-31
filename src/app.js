@@ -11,6 +11,7 @@ import clientRouter from "./modules/clients/infrastructure/ClientRoutes.js";
 import userRouter from "./modules/users/infrastructure/UserRoutes.js";
 import roleRouter from "./modules/roles/infrastructure/RoleRoutes.js";
 import saleRouter from "./modules/sales/infrastructure/SaleRoutes.js";
+import paymentRouter from "./modules/payments/infrastructure/PaymentRoutes.js";
 
 const app = express();
 
@@ -34,5 +35,6 @@ app.use("/api/devolutions", devolutionRouter);
 app.use("/api/users", userRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/sales", saleRouter);
+app.use("/api/payments", paymentRouter);
 
 export default app;
