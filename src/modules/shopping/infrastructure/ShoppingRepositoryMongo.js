@@ -25,15 +25,16 @@ export default class ShoppingRepositoryMongo {
         return await shoppingModel.findById(id).session(session);
     }
 
-    async findActiveByInvoice(numeroFactura, session = null) {
+
+    async findActiveByInvoice(invoiceNumber, session = null) {
         return await shoppingModel
-            .findOne({ numeroFactura: String(numeroFactura).trim(), estado: "ACTIVA" })
+            .findOne({ invoiceNumber: String(invoiceNumber).trim(), estado: "ACTIVA" })
             .session(session);
     }
 
     async findByProviderId(providerId) {
         return await shoppingModel.find({
-            proveedorId: providerId
+            providerId: providerId
         });
     }
     
@@ -47,6 +48,6 @@ export default class ShoppingRepositoryMongo {
     }
 
     async findAll() {
-        return await shoppingModel.find().sort({ fechaCreacion: -1 });
+        return await shoppingModel.find().sort({ createdAt: -1 });
     }
 }

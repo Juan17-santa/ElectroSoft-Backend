@@ -39,16 +39,16 @@ export const createShopping = async (req, res) => {
         );
 
         // Mapeo del request HTTP al formato del dominio.
-        // El cliente puede enviar "id" y "costeProducto", pero el dominio
-        // espera "productoId" y "precioCompra".
         const shoppingData = {
-            ...req.body,
-            productos: req.body.productos?.map((producto) => ({
-                productoId: producto.productoId ?? producto.id,
-                cantidad: producto.cantidad,
-                precioCompra: producto.precioCompra ?? producto.costeProducto,
-                precioVenta: producto.precioVenta,
-                usarPrecioSugerido: producto.usarPrecioSugerido ?? producto.sobreescribirConSugerido ?? false,
+            invoiceNumber: req.body.invoiceNumber,
+            providerId: req.body.providerId,
+            purchaseDate: req.body.purchaseDate,
+            products: (req.body.products ?? []).map((product) => ({
+                productId: product.productId,
+                quantity: product.quantity,
+                purchasePrice: product.purchasePrice,
+                salePrice: product.salePrice,
+                useSuggestedPrice: product.useSuggestedPrice ?? false,
             })),
         };
 

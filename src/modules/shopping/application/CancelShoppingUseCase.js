@@ -1,13 +1,13 @@
 const HOURS_LIMIT = 48;
 const MILLISECONDS_PER_HOUR = 1000 * 60 * 60;
 
-function parseInvoiceDateEndOfDay(fechaCompra) {
-    if (!fechaCompra || typeof fechaCompra !== "string") {
-        throw new Error("La fechaCompra es obligatoria para anular la compra");
+function parseInvoiceDateEndOfDay(purchaseDate) {
+    if (!purchaseDate || typeof purchaseDate !== "string") {
+        throw new Error("The purchaseDate is required to cancel the purchase");
     }
 
-    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaCompra)) {
-        const [year, month, day] = fechaCompra.split("-").map(Number);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(purchaseDate)) {
+        const [year, month, day] = purchaseDate.split("-").map(Number);
         const parsedDate = new Date(year, month - 1, day, 23, 59, 59, 999);
 
         if (
@@ -16,15 +16,15 @@ function parseInvoiceDateEndOfDay(fechaCompra) {
             parsedDate.getMonth() !== month - 1 ||
             parsedDate.getDate() !== day
         ) {
-            throw new Error("La fechaCompra no es valida");
+            throw new Error("The purchaseDate is not valid");
         }
 
         return parsedDate;
     }
 
-    const parts = fechaCompra.split("/");
+    const parts = purchaseDate.split("/");
     if (parts.length !== 3) {
-        throw new Error("La fechaCompra debe tener formato DD/MM/YYYY o YYYY-MM-DD");
+        throw new Error("The purchaseDate must be in format DD/MM/YYYY or YYYY-MM-DD");
     }
 
     const [day, month, year] = parts.map(Number);
@@ -36,29 +36,29 @@ function parseInvoiceDateEndOfDay(fechaCompra) {
         parsedDate.getMonth() !== month - 1 ||
         parsedDate.getDate() !== day
     ) {
-        throw new Error("La fechaCompra no es valida");
+        throw new Error("The purchaseDate is not valid");
     }
 
     return parsedDate;
 }
 
 function validateCancellationWindow(shopping, now) {
-    const fechaCreacion = new Date(shopping.fechaCreacion);
+    const createdAt = new Date(shopping.createdAt);
 
-    if (Number.isNaN(fechaCreacion.getTime())) {
-        throw new Error("La fechaCreacion de la compra no es valida");
+    if (Number.isNaN(createdAt.getTime())) {
+        throw new Error("The createdAt date of the purchase is not valid");
     }
 
-    const hoursFromCreation = (now - fechaCreacion) / MILLISECONDS_PER_HOUR;
+    const hoursFromCreation = (now - createdAt) / MILLISECONDS_PER_HOUR;
     if (hoursFromCreation >= HOURS_LIMIT) {
-        throw new Error("Han pasado mas de 48 horas desde la creacion de la compra");
+        throw new Error("More than 48 hours have passed since the creation of the purchase");
     }
 
-    const fechaCompraEndOfDay = parseInvoiceDateEndOfDay(shopping.fechaCompra);
-    const hoursFromInvoice = (now - fechaCompraEndOfDay) / MILLISECONDS_PER_HOUR;
+    const purchaseDateEndOfDay = parseInvoiceDateEndOfDay(shopping.purchaseDate);
+    const hoursFromInvoice = (now - purchaseDateEndOfDay) / MILLISECONDS_PER_HOUR;
 
     if (hoursFromInvoice >= HOURS_LIMIT) {
-        throw new Error("Han pasado mas de 48 horas desde la fecha de compra");
+        throw new Error("More than 48 hours have passed since the purchase date");
     }
 }
 
@@ -111,10 +111,14 @@ export default class CancelShoppingUseCase {
                 throw new Error("No se configuro el repositorio de productos para revertir inventario");
             }
 
-            for (const producto of shopping.productos) {
+            for (const producto of shopping.products) {
                 const updatedProduct = await this.externalCatalogGateway.revertPurchaseEntry(
-                    producto.productoId,
-                    producto.cantidad,
+                    producto.productId,
+                    {
+                        quantity: producto.quantity,
+                        salePrice: producto.salePrice,
+                        useSuggestedPrice: producto.useSuggestedPrice,
+                    },
                     session,
                 );
 
@@ -127,7 +131,7 @@ export default class CancelShoppingUseCase {
                 id,
                 {
                     estado: "ANULADA",
-                    anuladaEn: now,
+                    cancelledAt: now,
                 },
                 session,
             );
