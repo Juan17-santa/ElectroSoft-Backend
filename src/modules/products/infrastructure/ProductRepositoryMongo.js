@@ -35,6 +35,10 @@ class ProductRepositoryMongo {
         return await productModel.findOne({ name });
     }
 
+    async findBySerial(serial) {
+        return await productModel.findOne({ serial });
+    }
+
     async findByCategoryId(categoryId) {
         return await productModel.find({ categoryId: categoryId });
     }

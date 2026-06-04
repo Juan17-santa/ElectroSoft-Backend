@@ -24,6 +24,12 @@ export default class CreateProductUseCase {
             throw new Error("La categoría seleccionada no existe");
         }
 
+        // Verificar que el serial sea único
+        const existingProduct = await this.productRepository.findBySerial(serial);
+        if (existingProduct) {
+            throw new Error("El serial ya existe en otro producto");
+        }
+
         // Crear la entidad (aquí se validan reglas de negocio)
         const product = new ProductEntity({
             name,

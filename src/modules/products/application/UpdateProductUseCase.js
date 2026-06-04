@@ -37,6 +37,14 @@ export default class UpdateProductUseCase {
             }
         }
 
+        // Verificar que el serial sea único (si cambió)
+        if (serial && serial !== existingProduct.serial) {
+            const productWithSerial = await this.productRepository.findBySerial(serial);
+            if (productWithSerial) {
+                throw new Error("El serial ya existe en otro producto");
+            }
+        }
+
         // Validar las características editadas
         // Solo se permite: cambiar visible y eliminar. No editar textos.
         if (characteristics && Array.isArray(characteristics)) {
