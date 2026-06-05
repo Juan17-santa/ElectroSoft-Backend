@@ -1,4 +1,5 @@
 import { comparePassword } from "../../../infrastructure/security/passwordEncrypter.js";
+import { generateToken } from "../../../infrastructure/security/tokenGenerator.js";
 
 export default class VerifyCodeUseCase {
   constructor(verificationCodeRepository) {
@@ -16,6 +17,9 @@ export default class VerifyCodeUseCase {
     const isValid = await comparePassword(code, record.codeHash);
     if (!isValid) throw new Error("El código es incorrecto");
 
-    return { valid: true };
+    // Devuelve un token temporal válido por 15 minutos
+    const resetToken = generateToken({ email, purpose: "reset-password" });
+
+    return { resetToken };
   }
 }

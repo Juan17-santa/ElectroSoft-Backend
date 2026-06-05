@@ -44,6 +44,13 @@ export default class LoginUseCase {
         role: user.role.name,
         permissions: user.role.permissions,
         isActive: user.isActive,
+        documentType: {
+          _id: user.documentType._id,
+          abbreviation: user.documentType.abbreviation,
+          name: user.documentType.name,
+        },
+        documentNumber: user.documentNumber,
+        avatar: user.avatar || "",
       },
     };
   }
