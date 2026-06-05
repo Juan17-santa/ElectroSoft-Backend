@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // para la foto de perfil del usuario
+    avatar: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
