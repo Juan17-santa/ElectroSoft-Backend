@@ -1,35 +1,36 @@
-import { comparePassword, encryptPassword } from "../../../infrastructure/security/passwordEncrypter.js";
+import { encryptPassword } from "../../../infrastructure/security/passwordEncrypter.js";
+import { verifyToken } from "../../../infrastructure/security/tokenGenerator.js";
 
 export default class ResetPasswordUseCase {
-  constructor(userRepository, verificationCodeRepository) {
+  constructor(userRepository) {
     this.userRepository = userRepository;
-    this.verificationCodeRepository = verificationCodeRepository;
   }
 
-  async execute({ email, code, newPassword }) {
-    if (!email || !code || !newPassword) {
-      throw new Error("El email, el código y la nueva contraseña son obligatorios");
+  async execute({ resetToken, newPassword }) {
+    if (!resetToken || !newPassword) {
+      throw new Error("El token y la nueva contraseña son obligatorios");
     }
 
     if (newPassword.length < 6) {
       throw new Error("La nueva contraseña debe tener al menos 6 caracteres");
     }
 
-    // Verifica que el usuario exista
-    const user = await this.userRepository.findByEmail(email);
-    if (!user) throw new Error("No existe una cuenta con ese email");
+    // Verifica el token temporal
+    let decoded;
+    try {
+      decoded = verifyToken(resetToken);
+    } catch {
+      throw new Error("El token es inválido o ha expirado");
+    }
 
-    // Verifica el código
-    const record = await this.verificationCodeRepository.findValidByEmail(email);
-    if (!record) throw new Error("El código es inválido o ha expirado");
+    // Verifica que el token sea para resetear contraseña
+    if (decoded.purpose !== "reset-password") {
+      throw new Error("Token inválido");
+    }
 
-    const isValid = await comparePassword(code, record.codeHash);
-    if (!isValid) throw new Error("El código es incorrecto");
+    const user = await this.userRepository.findByEmail(decoded.email);
+    if (!user) throw new Error("Usuario no encontrado");
 
-    // Marca el código como usado (no se puede reutilizar)
-    await this.verificationCodeRepository.markAsUsed(record._id);
-
-    // Hashea y guarda la nueva contraseña
     const hashedPassword = await encryptPassword(newPassword);
     await this.userRepository.update(user._id, { password: hashedPassword });
 

@@ -65,8 +65,8 @@ export const RoleController = {
         error.message === "Rol no encontrado"
           ? 404
           : error.message.includes("No se pueden eliminar")
-          ? 403
-          : 500;
+            ? 403
+            : 500;
       res.status(status).json({ success: false, message: error.message });
     }
   },
@@ -81,12 +81,23 @@ export const RoleController = {
   },
   toggleStatus: async (req, res) => {
     try {
-        const result = await toggleRoleStatus.execute(req.params.id);
-        res.json({ success: true, data: result });
+      const result = await toggleRoleStatus.execute(req.params.id);
+      res.json({ success: true, data: result });
     } catch (error) {
-        const status =
-            error.message === "Rol no encontrado" ? 404 :error.message.includes("No se puede") ? 403 : 400;
-        res.status(status).json({ success: false, message: error.message });
+      const status =
+        error.message === "Rol no encontrado" ? 404 : error.message.includes("No se puede") ? 403 : 400;
+      res.status(status).json({ success: false, message: error.message });
     }
-},
+  },
+  getList: async (req, res) => {
+    try {
+      const roles = await getRoles.execute();
+      const list = roles
+        .filter(r => r.isActive)
+        .map(r => ({ _id: r._id, name: r.name }));
+      res.json({ success: true, data: list });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  },
 };

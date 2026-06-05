@@ -39,14 +39,19 @@ export const userRepository = {
   },
 
   update: async (id, userData) => {
-    return await UserModel.findByIdAndUpdate(id, userData, {
-      new: true,
-      runValidators: true,
-    })
-      .select("-password")
-      .populate("documentType", "name abbreviation")
-      .populate("role", "name permissions isActive");
-  },
+    const result = await UserModel.findByIdAndUpdate(
+        id,
+        { $set: userData }, 
+        {
+            new: true,
+            runValidators: true,
+        }
+    )
+        .select("-password")
+        .populate("documentType", "name abbreviation")
+        .populate("role", "name permissions isActive");
+    return result;
+},
 
   delete: async (id) => {
     return await UserModel.findByIdAndDelete(id);

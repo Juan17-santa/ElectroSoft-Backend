@@ -7,7 +7,7 @@ export default class UpdateUserUseCase {
     this.documentTypeRepository = documentTypeRepository;
   }
 
-  async execute(id, { fullName, email, password, phone, documentType, documentNumber, role }) {
+  async execute(id, { fullName, email, password, phone, documentType, documentNumber, role, avatar }) {
     // 1. Verificar que el usuario existe
     const existing = await this.userRepository.findById(id);
     if (!existing) throw new Error("Usuario no encontrado");
@@ -62,6 +62,8 @@ export default class UpdateUserUseCase {
         throw new Error("La contraseña debe tener al menos 6 caracteres");
       updateData.password = await encryptPassword(password);
     }
+
+    if (avatar !== undefined) updateData.avatar = avatar;
 
     return await this.userRepository.update(id, updateData);
   }
