@@ -3,6 +3,7 @@
  * 
  * Responsabilidades:
  * - Validar que la categoría exista.
+ * - Validar que el serial sea único.
  * - Aplicar las reglas de la entidad (validaciones).
  * - Guardar el producto en la base de datos.
  */

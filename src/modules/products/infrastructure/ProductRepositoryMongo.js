@@ -24,7 +24,9 @@ class ProductRepositoryMongo {
     }
 
     async findAll() {
-        return await productModel.find().populate("categoryId", "name description status");
+        return await productModel.find()
+            .populate("categoryId", "name description status")
+            .sort({ createdAt: -1 });
     }
 
     async findById(id) {
@@ -51,6 +53,13 @@ class ProductRepositoryMongo {
         return await productModel.findByIdAndDelete(id);
     }
 
+    async updateStock(id, quantity) {
+        return await productModel.findByIdAndUpdate(
+            id,
+            { $inc: { stock: quantity } },
+            { new: true }
+        );
+    }
 }
 
 export default ProductRepositoryMongo;
