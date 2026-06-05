@@ -14,6 +14,7 @@
  */
 
 import { productCategoryModel } from "./ProductCategoryModel.js";
+import { productModel } from "../../products/infrastructure/ProductModel.js";
 
 class ProductCategoryRepositoryMongo {
 
@@ -23,7 +24,23 @@ class ProductCategoryRepositoryMongo {
     }
 
     async findAll() {
-        return await productCategoryModel.find();
+        const categories = await productCategoryModel
+            .find()
+            .sort({ createdAt: -1 });
+
+        const categoriesWithCount = await Promise.all(
+            categories.map(async (category) => {
+                const count = await productModel.countDocuments({
+                    categoryId: category._id
+                });
+
+                return {
+                    ...category.toObject(),
+                    productsCount: count
+                };
+            })
+        );
+        return categoriesWithCount;
     }
 
     async findById(id) {

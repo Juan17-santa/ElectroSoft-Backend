@@ -94,19 +94,7 @@ export const deleteProductCategory = async (req, res) => {
             return res.status(400).json({ error: "ID inválido" });
         }
 
-        // const useCase = new DeleteProductCategoryUseCase(productCategoryRepository, providerRepository);
         const useCase = new DeleteProductCategoryUseCase(productCategoryRepository, productRepository, providerRepository);
-
-        // NOTA:
-        // Este caso de uso debería validar que la categoría no tenga
-        // productos o proveedores asociados antes de eliminar.
-        // 
-        // Actualmente no se realiza esta validación porque los
-        // repositorios de productos y proveedores aún no están implementados.
-        // 
-        // Cuando estén disponibles, se utilizaran en este controlador para realizar 
-        // la validación necesaria y evitar eliminar categorías con relaciones activas.
-
         const result = await useCase.execute(req.params.id);
         res.json({ message: "Categoría eliminada con éxito", data: result });
     } catch (error) {
