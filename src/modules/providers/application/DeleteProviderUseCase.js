@@ -8,10 +8,9 @@
  */
 
 export default class DeleteProviderUseCase {
-    constructor(providerRepository) {
-    // constructor(providerRepository, shoppingRepository) {
+    constructor(providerRepository, shoppingRepository) {
         this.providerRepository = providerRepository;
-        // this.shoppingRepository = shoppingRepository;
+        this.shoppingRepository = shoppingRepository;
     }
 
     async execute(id) {
@@ -22,14 +21,14 @@ export default class DeleteProviderUseCase {
             throw new Error("El proveedor no existe");
         }
 
-        // // Validar si tiene compras asociadas
-        // const comprasAsociadas = await this.shoppingRepository.findByProviderId(id);
+        // Validar si tiene compras asociadas
+        const comprasAsociadas = await this.shoppingRepository.findByProviderId(id);
 
-        // if (comprasAsociadas.length > 0) {
-        //     throw new Error(
-        //         `No se puede eliminar: Este proveedor tiene ${comprasAsociadas.length} compra(s) asociada(s).`
-        //     );
-        // }
+        if (comprasAsociadas.length > 0) {
+            throw new Error(
+                `No se puede eliminar: Este proveedor tiene ${comprasAsociadas.length} compra(s) asociada(s).`
+            );
+        }
 
         // Eliminar proveedor
         return await this.providerRepository.delete(id);

@@ -3,10 +3,10 @@
  * 
  * Responsabilidades:
  * - Verificar que el proveedor exista.
+ * - Aplicar reglas de la entidad.
  * - Validar tipo de documento.
  * - Validar documento único (si cambia).
  * - Validar categorías.
- * - Aplicar reglas de la entidad.
  * - Actualizar en base de datos.
  */
 
@@ -28,8 +28,7 @@ export default class UpdateProviderUseCase {
             throw new Error("El proveedor no existe")
         }
 
-
-        // PRIMERO: validar entidad
+        // Validar entidad (campos obligatorios, formatos, etc)
         const updatedProvider = new ProviderEntity({
             id,
             documentType,
@@ -40,10 +39,6 @@ export default class UpdateProviderUseCase {
             categoriesAssociated,
             status: existingProvider.status
         })
-
-        // DESPUÉS: validar contra base de datos
-
-        // Verificar si el proveedor existe
 
         // Validar que el tipo de documento exista
         const docTypeExists = await this.documentTypeRepository.findById(documentType);

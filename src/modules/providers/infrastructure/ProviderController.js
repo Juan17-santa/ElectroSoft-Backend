@@ -29,13 +29,12 @@ import CreateProviderUseCase from "../application/CreateProviderUseCase.js";
 import ProviderRepositoryMongo from "./ProviderRepositoryMongo.js";
 import DocumentTypeRepositoryMongo from "../../../shared/infrastructure/repositories/DocumentTypeRepositoryMongo.js"
 import ProductCategoryRepositoryMongo from "../../productCategory/infrastructure/ProductCategoryRepositoryMongo.js"
-// import ShoppingRepositoryMongo from "../../products/infrastructure/ShoppingRepositoryMongo";
+import ShoppingRepositoryMongo from "../../shopping/infrastructure/ShoppingRepositoryMongo.js";
 
-// const shoppingRepository = new ShoppingRepositoryMongo();
+const shoppingRepository = new ShoppingRepositoryMongo();
 const providerRepository = new ProviderRepositoryMongo();
 const documentTypeRepository = new DocumentTypeRepositoryMongo();
 const productCategoryRepository = new ProductCategoryRepositoryMongo();
-
 
 export const createProvider = async (req, res) => {
     try {
@@ -96,20 +95,7 @@ export const deleteProvider = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
         }
-
-        const useCase = new DeleteProviderUseCase(providerRepository);
-        // const useCase = new DeleteProviderUseCase(providerRepository, shoppingRepository);
-
-        // NOTA:
-        // Este caso de uso debería validar que el proveedor no tenga
-        // compras asociadas antes de eliminar.
-        // 
-        // Actualmente no se realiza esta validación porque el
-        // repositorio de compras aún no esta implementado.
-        // 
-        // Cuando estén disponibles, se utilizaran en este controlador para realizar 
-        // la validación necesaria y evitar eliminar proveedores con relaciones activas.
-
+        const useCase = new DeleteProviderUseCase(providerRepository, shoppingRepository);
         const result = await useCase.execute(req.params.id);
         res.json({ message: "El proveedor ha sido eliminado con éxito", data: result });
     } catch (error) {

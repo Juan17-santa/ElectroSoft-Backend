@@ -2,9 +2,10 @@
  * Caso de uso para crear un nuevo proveedor.
  * 
  * Responsabilidades:
+ * - Aplicar las reglas de la entidad (validaciones).
  * - Validar que el tipo de documento exista.
  * - Validar que el documento no esté duplicado.
- * - Aplicar las reglas de la entidad (validaciones).
+ * - Validar que las categorías asociadas existan.
  * - Guardar el proveedor en la base de datos.
  */
 
@@ -21,7 +22,6 @@ export default class CreateProviderUseCase {
     async execute(providerData) {
         const { id, documentType, document, providerName, contactName, contactPhone, categoriesAssociated = [], status } = providerData;
 
-        // PRIMERO: validar entidad (campos obligatorios, formatos, etc)
         const provider = new ProviderEntity({
             id,
             documentType,
@@ -33,7 +33,6 @@ export default class CreateProviderUseCase {
             status
         })
 
-        // DESPUÉS: validar contra base de datos
         // Validar que el tipo de documento exista
         const docTypeExists = await this.documentTypeRepository.findById(documentType);
         if (!docTypeExists) {

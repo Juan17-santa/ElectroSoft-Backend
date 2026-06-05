@@ -23,11 +23,16 @@ class ProviderRepositoryMongo {
     }
 
     async findAll() {
-        return await providerModel.find();
+        return await providerModel.find()
+            .populate("documentType")
+            .populate("categoriesAssociated")
+            .sort({ createdAt: -1 });
     }
 
     async findById(id) {
-        return await providerModel.findById(id);
+        return await providerModel.findById(id)
+            .populate("documentType")
+            .populate("categoriesAssociated");
     }
 
     async findByDocument(document) {
