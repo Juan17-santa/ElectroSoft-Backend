@@ -49,5 +49,5 @@ export const seedRoles = async () => {
     },
   ]);
 
-  console.log("✅ Roles sembrados correctamente");
+  console.log("Roles sembrados correctamente");
 };

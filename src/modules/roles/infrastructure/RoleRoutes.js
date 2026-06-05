@@ -10,6 +10,7 @@ router.get("/permissions", requireAuth, RoleController.getPermissions);
 
 // Todos requieren roles:acceso
 router.get("/", requireAuth, requirePermission("roles:acceso"), RoleController.getAll);
+router.get("/list", requireAuth, RoleController.getList);
 router.get("/:id", requireAuth, requirePermission("roles:acceso"), RoleController.getById);
 router.post("/", requireAuth, requirePermission("roles:acceso"), RoleController.create);
 router.put("/:id", requireAuth, requirePermission("roles:acceso"), RoleController.update);
