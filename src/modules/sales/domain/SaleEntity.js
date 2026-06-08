@@ -21,10 +21,12 @@ export default class SaleEntity {
         fechaVenta,
         fechaCreacion = new Date(),
         anuladaEn = null,
+        tipoVenta = "Contado",
+        observaciones = "",
     }) {
         // VALIDACIÓN: NÚMERO DE FACTURA
-        if (!numeroFactura || !/^\d+$/.test(String(numeroFactura).trim())) {
-            throw new Error("El numeroFactura es obligatorio y solo debe contener números");
+        if (!numeroFactura || !String(numeroFactura).trim()) {
+            throw new Error("El numeroFactura es obligatorio");
         }
 
         // VALIDACIÓN: CLIENTE
@@ -72,6 +74,8 @@ export default class SaleEntity {
         this.fechaVenta = fechaVenta;
         this.fechaCreacion = fechaCreacion;
         this.anuladaEn = anuladaEn;
+        this.tipoVenta = tipoVenta || "Contado";
+        this.observaciones = observaciones || "";
     }
 
     calculateTotal() {

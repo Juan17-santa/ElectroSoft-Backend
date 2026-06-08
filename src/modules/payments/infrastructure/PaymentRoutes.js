@@ -16,6 +16,7 @@ import {
     getPayments,
     getPaymentsByVenta,
     getPaymentById,
+    cancelPayment,
 } from "./PaymentController.js";
 
 const router = Router();
@@ -24,5 +25,6 @@ router.post("/", createPayment);
 router.get("/venta/:ventaId", getPaymentsByVenta);
 router.get("/", getPayments);
 router.get("/:id", getPaymentById);
+router.patch("/:id/cancel", cancelPayment);
 
 export default router;

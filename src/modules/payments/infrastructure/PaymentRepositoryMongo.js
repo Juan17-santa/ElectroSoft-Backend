@@ -36,4 +36,12 @@ export default class PaymentRepositoryMongo {
             .populate("ventaId", "numeroFactura total estado clienteId")
             .sort({ fechaPago: -1 });
     }
+
+    async cancel(id) {
+        return await paymentModel.findByIdAndUpdate(
+            id,
+            { $set: { estado: "ANULADO" } },
+            { new: true }
+        );
+    }
 }
