@@ -89,6 +89,16 @@ const saleSchema = new mongoose.Schema({
         type: Date,
         default: null,
     },
+    tipoVenta: {
+        type: String,
+        default: "Contado",
+        enum: ["Contado", "Crédito"],
+    },
+    observaciones: {
+        type: String,
+        default: "",
+        trim: true,
+    },
 });
 
 saleSchema.index({ numeroFactura: 1, estado: 1 });

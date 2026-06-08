@@ -4,7 +4,8 @@ import {
     getClients,
     getClientById,
     updateClient,
-    deleteClient
+    deleteClient,
+    updateCupo
 } from './ClientController.js';
 
 const router = Router();
@@ -13,6 +14,7 @@ router.post('/', createClient);
 router.get('/', getClients);
 router.get('/:id', getClientById);
 router.put('/:id', updateClient);
+router.patch('/:id/cupo', updateCupo);
 router.delete('/:id', deleteClient);
 
 export default router;

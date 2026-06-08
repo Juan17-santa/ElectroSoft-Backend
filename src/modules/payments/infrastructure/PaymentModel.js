@@ -46,7 +46,7 @@ const paymentSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: "PENDIENTE",
-        enum: ["PENDIENTE", "PAGADA"],
+        enum: ["PENDIENTE", "PAGADA", "ANULADO"],
     },
     fechaPago: {
         type: Date,

@@ -19,6 +19,7 @@ import CreatePaymentUseCase from "../application/CreatePaymentUseCase.js";
 import GetPaymentsUseCase from "../application/GetPaymentsUseCase.js";
 import GetPaymentsByVentaUseCase from "../application/GetPaymentsByVentaUseCase.js";
 import GetPaymentByIdUseCase from "../application/GetPaymentByIdUseCase.js";
+import CancelPaymentUseCase from "../application/CancelPaymentUseCase.js";
 import PaymentRepositoryMongo from "./PaymentRepositoryMongo.js";
 import PaymentSaleGatewayMongo from "./PaymentSaleGatewayMongo.js";
 
@@ -85,5 +86,23 @@ export const getPaymentById = async (req, res) => {
         res.json({ data: result });
     } catch (error) {
         res.status(404).json({ error: error.message });
+    }
+};
+
+// Anula un pago (abono) por ID
+export const cancelPayment = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: "ID inválido" });
+        }
+
+        const useCase = new CancelPaymentUseCase(paymentRepository);
+        const result = await useCase.execute(id);
+
+        res.json({ message: "Pago anulado con éxito", data: result });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
     }
 };

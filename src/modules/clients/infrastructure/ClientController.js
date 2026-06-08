@@ -75,3 +75,32 @@ export const deleteClient = async (req, res) => {
         res.status(404).json({ error: error.message });
     }
 };
+
+export const updateCupo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: "ID inválido" });
+        }
+
+        const { cupoTotal, cupoActivo, estado } = req.body;
+
+        const updateData = {};
+        if (cupoTotal !== undefined) updateData.cupoTotal = Number(cupoTotal);
+        if (cupoActivo !== undefined) updateData.cupoActivo = Boolean(cupoActivo);
+        if (estado !== undefined) updateData.estado = Boolean(estado);
+
+        const { ClientModel } = await import('./ClientModel.js');
+        const client = await ClientModel.findByIdAndUpdate(
+            id,
+            { $set: updateData },
+            { new: true }
+        ).populate('documentType');
+
+        if (!client) return res.status(404).json({ error: "Cliente no encontrado" });
+
+        res.status(200).json({ message: "Cupo/estado actualizado", client });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
