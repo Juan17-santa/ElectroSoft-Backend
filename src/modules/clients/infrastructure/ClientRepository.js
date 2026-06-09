@@ -6,11 +6,21 @@ export const clientRepository = {
     },
 
     findAll: async () => {
-        return await ClientModel.find().populate('documentType');
+        return await ClientModel.find()
+            .populate('documentType')
+            .sort({ createdAt: -1 });
     },
 
     findById: async (id) => {
         return await ClientModel.findById(id).populate('documentType');
+    },
+
+    findByDocumentNumber: async (documentNumber) => {
+        return await ClientModel.findOne({ documentNumber });
+    },
+
+    findByEmail: async (email) => {
+        return await ClientModel.findOne({ email: email.toLowerCase() });
     },
 
     update: async (id, data) => {
@@ -21,4 +31,3 @@ export const clientRepository = {
         return await ClientModel.findByIdAndDelete(id);
     }
 };
-
