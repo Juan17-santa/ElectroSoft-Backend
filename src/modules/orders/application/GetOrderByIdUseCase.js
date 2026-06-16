@@ -1,0 +1,32 @@
+/**
+ * Caso de uso para obtener un pedido por su ID.
+ *
+ * Responsabilidades:
+ * - Aplicar la anulación automática antes de consultar.
+ * - Buscar el pedido por ID.
+ * - Validar existencia.
+ */
+
+export default class GetOrderByIdUseCase {
+    constructor(orderRepository) {
+        this.orderRepository = orderRepository;
+    }
+
+    async execute(id) {
+        let order = await this.orderRepository.findById(id);
+
+        if (!order) {
+            throw new Error("Pedido no encontrado");
+        }
+
+        // 2. ¿Está pendiente y ya se pasó de la fecha de vencimiento?
+        const isExpired = order.status === "Pendiente" && new Date(order.dueDate) < new Date();
+
+        if (isExpired) {
+            // 3. Auto-expiración quirúrgica: procesa el stock y anula solo este pedido
+            order = await this.orderRepository.expireSingleOrder(order);
+        }
+
+        return order;
+    }
+}
