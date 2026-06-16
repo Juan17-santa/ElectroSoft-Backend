@@ -67,6 +67,9 @@ export default class CreateSaleUseCase {
             // Decrementar stock
             await this.applyInventoryImpact(sale, productsById, session);
 
+            // Incrementar compras del cliente
+            await this.externalCatalogGateway.applySaleToClient(sale.clienteId, sale.total, session);
+
             // Marcar que el impacto fue aplicado correctamente
             const updatedSale = await this.saleRepository.update(
                 createdSale._id,

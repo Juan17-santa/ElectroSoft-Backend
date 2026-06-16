@@ -138,6 +138,9 @@ export default class CancelSaleUseCase {
                 }
             }
 
+            // Decrementar compras del cliente
+            await this.externalCatalogGateway.revertSaleFromClient(sale.clienteId, sale.total, session);
+
             const updatedSale = await this.saleRepository.update(
                 id,
                 {

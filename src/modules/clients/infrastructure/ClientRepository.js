@@ -6,7 +6,7 @@ export const clientRepository = {
     },
 
     findAll: async () => {
-        return await ClientModel.find().populate('documentType');
+        return await ClientModel.find().sort({ createdAt: -1 }).populate('documentType');
     },
 
     findById: async (id) => {

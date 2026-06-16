@@ -43,8 +43,8 @@ export default class CreatePaymentUseCase {
             throw new Error("La venta asociada al pago no existe");
         }
 
-        if (venta.estado !== "ACTIVA") {
-            throw new Error("Solo se pueden registrar pagos en ventas activas");
+        if (venta.estado !== "ACTIVA" && venta.estado !== "Vigente") {
+            throw new Error("Solo se pueden registrar pagos en ventas activas o vigentes");
         }
 
         // Calcular el total ya pagado (suma de todos los pagos anteriores)
