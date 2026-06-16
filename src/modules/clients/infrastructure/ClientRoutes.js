@@ -3,6 +3,7 @@ import {
     createClient,
     getClients,
     getClientById,
+    getClientByDocument,
     updateClient,
     deleteClient,
     updateCupo
@@ -12,6 +13,7 @@ const router = Router();
 
 router.post('/', createClient);
 router.get('/', getClients);
+router.get('/document/:documentNumber', getClientByDocument);
 router.get('/:id', getClientById);
 router.put('/:id', updateClient);
 router.patch('/:id/cupo', updateCupo);
