@@ -13,6 +13,7 @@
  * - update: actualiza una venta y retorna el documento actualizado.
  * - findAll: lista todas las ventas ordenadas por fechaCreacion descendente.
  */
+import mongoose from "mongoose";
 import { saleModel } from "./SaleModel.js";
 
 export default class SaleRepositoryMongo {
@@ -44,10 +45,36 @@ export default class SaleRepositoryMongo {
     }
 
     async findAll() {
-        return await saleModel
+        const sales = await saleModel
             .find()
             .populate("clienteId", "firstName lastName documentNumber email phone")
             .populate("productos.productoId", "name serial price")
-            .sort({ fechaCreacion: -1 });
+            .sort({ fechaCreacion: -1 })
+            .lean();
+
+        // Obtener todos los pagos activos
+        const paymentModel = mongoose.model("Payment");
+        const allPayments = await paymentModel.find({
+            estado: { $ne: "ANULADO" },
+            ventaId: { $in: sales.map(s => s._id) }
+        });
+
+        // Agrupar pagos por venta
+        const paymentsBySale = allPayments.reduce((acc, p) => {
+            const saleIdStr = p.ventaId.toString();
+            acc[saleIdStr] = (acc[saleIdStr] || 0) + p.monto;
+            return acc;
+        }, {});
+
+        // Enriquecer ventas con montoPagado y montoPorPagar
+        return sales.map(sale => {
+            const total = sale.total || 0;
+            const montoPagado = paymentsBySale[sale._id.toString()] || 0;
+            return {
+                ...sale,
+                montoPagado: sale.tipoVenta === 'Contado' ? total : montoPagado,
+                montoPorPagar: sale.tipoVenta === 'Contado' ? 0 : Math.max(0, total - montoPagado)
+            };
+        });
     }
 }
