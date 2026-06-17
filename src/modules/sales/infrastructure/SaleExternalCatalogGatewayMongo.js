@@ -72,4 +72,34 @@ export default class SaleExternalCatalogGatewayMongo {
 
         return getUpdatedDocument(result);
     }
+
+    // Incrementa las compras totales del cliente al confirmar la venta
+    async applySaleToClient(clientId, montoVenta, session = null) {
+        const client = await ClientModel.findById(clientId).session(session);
+        if (!client) return null;
+
+        const baseTotal = Math.max(0, client.totalCompras || 0);
+        const nuevoTotal = baseTotal + Number(montoVenta);
+
+        return await ClientModel.findByIdAndUpdate(
+            clientId,
+            { totalCompras: nuevoTotal },
+            { new: true, session }
+        );
+    }
+
+    // Decrementa las compras totales del cliente al anular la venta
+    async revertSaleFromClient(clientId, montoVenta, session = null) {
+        const client = await ClientModel.findById(clientId).session(session);
+        if (!client) return null;
+
+        const baseTotal = Math.max(0, client.totalCompras || 0);
+        const nuevoTotal = Math.max(0, baseTotal - Number(montoVenta));
+
+        return await ClientModel.findByIdAndUpdate(
+            clientId,
+            { totalCompras: nuevoTotal },
+            { new: true, session }
+        );
+    }
 }
