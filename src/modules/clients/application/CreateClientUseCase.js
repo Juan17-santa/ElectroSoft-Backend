@@ -9,6 +9,25 @@ export default class CreateClientUseCase {
     async execute(clientData) {
         const { documentType, documentNumber, firstName, lastName, email, phone } = clientData;
 
+        const docTypeExists = await this.documentTypeRepository.findById(documentType);
+
+        if (!docTypeExists) {
+            throw new Error("El tipo de documento proporcionado no es válido");
+        }
+
+        // VALIDAR DOCUMENTO REPETIDO
+        const existingClient = await this.clientRepository.findByDocumentNumber(documentNumber);
+
+        if (existingClient) {
+            throw new Error("El documento ya se encuentra registrado");
+        }
+
+        const existingEmail = await this.clientRepository.findByEmail(email);
+
+        if (existingEmail) {
+            throw new Error("El email ya se encuentra registrado");
+        }
+
         const client = new Client({
             documentType,
             documentNumber,
@@ -18,12 +37,6 @@ export default class CreateClientUseCase {
             phone,
             createdAt: new Date()
         });
-
-        // Validar que el tipo de documento existe
-        const docTypeExists = await this.documentTypeRepository.findById(documentType);
-        if (!docTypeExists) {
-            throw new Error('El tipo de documento proporcionado no es válido');
-        }
 
         return await this.clientRepository.create(client);
     }

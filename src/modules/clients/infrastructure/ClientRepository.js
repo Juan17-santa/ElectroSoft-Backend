@@ -13,6 +13,14 @@ export const clientRepository = {
         return await ClientModel.findById(id).populate('documentType');
     },
 
+    findByDocumentNumber: async (documentNumber) => {
+        return await ClientModel.findOne({ documentNumber });
+    },
+
+    findByEmail: async (email) => {
+        return await ClientModel.findOne({ email: email.toLowerCase() });
+    },
+
     update: async (id, data) => {
         return await ClientModel.findByIdAndUpdate(id, data, { new: true }).populate('documentType');
     },
@@ -21,4 +29,3 @@ export const clientRepository = {
         return await ClientModel.findByIdAndDelete(id);
     }
 };
-

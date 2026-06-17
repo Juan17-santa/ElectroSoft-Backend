@@ -6,6 +6,7 @@ import DeleteClientUseCase from '../application/DeleteClientUseCase.js';
 import { clientRepository } from './ClientRepository.js';
 import DocumentTypeRepositoryMongo from '../../../shared/infrastructure/repositories/DocumentTypeRepositoryMongo.js';
 import mongoose from 'mongoose';
+import GetClientByDocumentUseCase from '../application/GetClientByDocumentUseCase.js';
 
 const documentTypeRepository = new DocumentTypeRepositoryMongo();
 
@@ -45,6 +46,20 @@ export const getClientById = async (req, res) => {
     }
 };
 
+export const getClientByDocument = async (req, res) => {
+    try {
+        const { documentNumber } = req.params;
+        
+        const useCase = new GetClientByDocumentUseCase(clientRepository);
+        const client = await useCase.execute(documentNumber);
+        res.status(200).json(client);
+    } catch (error) {
+        res.status(404).json({
+            error: error.message
+        });
+    }
+};
+
 export const updateClient = async (req, res) => {
     try {
         const { id } = req.params;
@@ -70,7 +85,7 @@ export const deleteClient = async (req, res) => {
 
         const useCase = new DeleteClientUseCase(clientRepository);
         const result = await useCase.execute(req.params.id);
-        res.status(200).json({ message: "Cliente eliminado exitosamente", client:result });
+        res.status(200).json({ message: "Cliente eliminado exitosamente", client: result });
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
