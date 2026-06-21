@@ -69,6 +69,20 @@ export default class CreateShoppingUseCase {
 
             const productsById = await this.validateReferences(shopping, session);
 
+            // Adjuntar snapshot de precio y costo promedio previo en cada linea de la compra.
+            // Esto permite una reversión exacta sin depender de valores redondeados
+            // almacenados luego de aplicar la compra.
+            for (const prod of shopping.products) {
+                const currentProduct = productsById.get(String(prod.productId));
+                const prevPrice = getCurrentInventoryPrice(currentProduct);
+                const prevCosto = currentProduct.costoPromedio != null
+                    ? Number(currentProduct.costoPromedio)
+                    : prevPrice;
+
+                prod.previousPrice = prevPrice;
+                prod.previousCostoPromedio = prevCosto;
+            }
+
             shopping.calculateTotal();
 
             // Guarda la compra y aplica inventario real dentro de la misma transaccion.

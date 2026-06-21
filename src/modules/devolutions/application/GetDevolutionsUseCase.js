@@ -14,7 +14,7 @@ export default class GetDevolutionsUseCase {
         this.devolutionRepository = devolutionRepository;
     }
 
-    async execute() {
-        return await this.devolutionRepository.findAll();
+    async execute(options = {}) {
+        return await this.devolutionRepository.findAll(options);
     }
 }

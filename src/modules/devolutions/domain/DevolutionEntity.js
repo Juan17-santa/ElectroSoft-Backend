@@ -1,63 +1,100 @@
-/**
- * Entidad de devolución.
- *
- * Representa la lógica de negocio mínima del módulo Devolutions.
- * Esta entidad es autocontenida: no consulta compras, ventas ni productos.
- *
- * Validaciones:
- * - El shoppingId es obligatorio.
- * - La devolución debe tener al menos un producto.
- * - Cada producto debe tener productoId.
- * - La cantidad de cada producto debe ser mayor a 0.
- * - Cada producto debe tener motivo.
- *
- * Nota:
- * - El impacto se simula con impactApplied.
- * - La confirmación de devolución no depende del módulo de ventas.
- */
+export const DEVOLUTION_STATES = [
+    "CREADA",
+    "PENDIENTE_PROVEEDOR",
+    "ENVIADO_PROVEEDOR",
+    "PRODUCTO_ENTREGADO_PROVEEDOR",
+    "PRODUCTO_ENTREGADO_CLIENTE",
+    "REEMBOLSO_PROVEEDOR",
+    "REEMBOLSO_EMPRESA",
+    "RESUELTO",
+    "RECHAZADA",
+];
+
+export const DEVOLUTION_SPECIAL_STATES = ["Anulada"];
+
+export const DEVOLUTION_PRODUCT_REASONS = ["GARANTIA", "LOGISTICA", "CLIENTE"];
+
+function normalizeDateOnly(value) {
+    if (!value) return new Date().toISOString().split("T")[0];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+        throw new Error("La fechaDevolucion debe tener formato YYYY-MM-DD");
+    }
+    return String(value);
+}
+
 export default class DevolutionEntity {
     constructor({
-        shoppingId,
+        saleId,
         productos,
-        estado = "PENDIENTE",
+        fechaDevolucion,
+        estadoResolucion = "CREADA",
+        historialEstados = [],
+        anulada = false,
+        anuladaEn = null,
         impactApplied = false,
         fechaCreacion = new Date(),
+        actualizadoEn = new Date(),
         confirmadaEn = null,
     }) {
-        // VALIDACIÓN: COMPRA RELACIONADA
-        if (!shoppingId) throw new Error("El shoppingId es obligatorio");
+        if (!saleId) throw new Error("El saleId es obligatorio");
 
-        // VALIDACIÓN: PRODUCTOS DEVUELTOS
         if (!Array.isArray(productos) || productos.length === 0) {
             throw new Error("La devolucion debe tener al menos un producto");
         }
 
+        if (
+            !DEVOLUTION_STATES.includes(estadoResolucion) &&
+            !DEVOLUTION_SPECIAL_STATES.includes(estadoResolucion)
+        ) {
+            throw new Error("El estadoResolucion no es valido");
+        }
+
         productos.forEach((producto, index) => {
-            // VALIDACIÓN: PRODUCTO
             if (!producto.productoId) {
                 throw new Error(`El productoId es obligatorio en el producto ${index + 1}`);
             }
 
-            // VALIDACIÓN: CANTIDAD
-            if (Number(producto.cantidad) <= 0) {
+            if (!producto.nombre || !String(producto.nombre).trim()) {
+                throw new Error(`El nombre es obligatorio en el producto ${index + 1}`);
+            }
+
+            const cantidad = Number(producto.cantidad);
+            if (!Number.isFinite(cantidad) || cantidad <= 0) {
                 throw new Error(`La cantidad debe ser mayor a 0 en el producto ${index + 1}`);
             }
 
-            // VALIDACIÓN: MOTIVO
-            if (!producto.motivo) {
-                throw new Error(`El motivo es obligatorio en el producto ${index + 1}`);
+            if (producto.motivo && !DEVOLUTION_PRODUCT_REASONS.includes(producto.motivo)) {
+                throw new Error(`El motivo no es valido en el producto ${index + 1}`);
+            }
+
+            if (!producto.descripcion || !String(producto.descripcion).trim()) {
+                throw new Error(`La descripcion es obligatoria en el producto ${index + 1}`);
             }
         });
 
-        this.shoppingId = shoppingId;
+        this.saleId = String(saleId);
         this.productos = productos.map((producto) => ({
-            productoId: producto.productoId,
+            productoId: String(producto.productoId),
+            nombre: String(producto.nombre).trim(),
             cantidad: Number(producto.cantidad),
-            motivo: producto.motivo,
+            motivo: producto.motivo ?? "",
+            submotivo: producto.submotivo ?? "",
+            condicionProducto: producto.condicionProducto ?? "",
+            gestion: producto.gestion ?? "",
+            responsable: producto.responsable ?? "",
+            garantiaProveedor:
+                producto.garantiaProveedor === undefined ? null : producto.garantiaProveedor,
+            descripcion: String(producto.descripcion).trim(),
+            observaciones: producto.observaciones ?? "",
         }));
-        this.estado = estado;
-        this.impactApplied = impactApplied;
+        this.fechaDevolucion = normalizeDateOnly(fechaDevolucion);
+        this.estadoResolucion = estadoResolucion;
+        this.historialEstados = historialEstados;
+        this.anulada = Boolean(anulada);
+        this.anuladaEn = anuladaEn;
+        this.impactApplied = Boolean(impactApplied);
         this.fechaCreacion = fechaCreacion;
+        this.actualizadoEn = actualizadoEn;
         this.confirmadaEn = confirmadaEn;
     }
 }

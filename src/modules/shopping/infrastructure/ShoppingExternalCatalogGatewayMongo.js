@@ -46,7 +46,7 @@ export default class ShoppingExternalCatalogGatewayMongo {
         return getUpdatedDocument(result);
     }
 
-    async revertPurchaseEntry(id, { quantity, salePrice, useSuggestedPrice }, session = null) {
+    async revertPurchaseEntry(id, { quantity, salePrice, useSuggestedPrice, previousPrice = null, previousCostoPromedio = null }, session = null) {
         const objectId = toObjectId(id);
 
         // Leer el producto actual para calcular el precio anterior a la compra.
@@ -72,9 +72,22 @@ export default class ShoppingExternalCatalogGatewayMongo {
         let updateDoc;
 
         if (previousStock === 0) {
-            // Toda la existencia vino de esta compra: no hay precio anterior que recuperar.
-            // Solo se descuenta el stock.
+            // Toda la existencia vino de esta compra: por defecto solo se descuenta el stock.
+            // Si se nos proveyeron snapshots previos, los aplicamos para restaurar valores exactos.
             updateDoc = { $inc: { stock: -Number(quantity) } };
+
+            if (previousPrice != null || previousCostoPromedio != null) {
+                const prevCosto = previousCostoPromedio != null
+                    ? Number(previousCostoPromedio)
+                    : Number(previousPrice);
+                const prevAppliedPrice = previousPrice != null ? Number(previousPrice) : prevCosto;
+
+                updateDoc.$set = {
+                    price: prevAppliedPrice,
+                    precio: prevAppliedPrice,
+                    costoPromedio: prevCosto,
+                };
+            }
         } else {
             // Despeja costoPromedioAnterior de la fórmula de costo promedio ponderado:
             // costoActual = (stockAnterior × costoAnterior + cantidad × salePrice) / stockActual
@@ -85,17 +98,27 @@ export default class ShoppingExternalCatalogGatewayMongo {
 
             const previousAverageCost = Math.ceil(exactPreviousCost / 100) * 100;
 
-            // Si la compra usó useSuggestedPrice, el price/precio fue el salePrice de esa compra.
-            // En ese caso no podemos saber el price/precio previo con exactitud, así que
-            // restauramos el costoPromedio anterior como mejor aproximación.
-            const previousAppliedPrice = previousAverageCost;
+            // Por defecto usamos el cálculo aritmético para recuperar el previo.
+            let previousAppliedPrice = previousAverageCost;
+            let previousCostoToSet = previousAverageCost;
+
+            // Si se proporcionó un snapshot (guardado al crear la compra), lo usamos
+            // para restaurar exactamente los valores previos y evitar errores por redondeo.
+            if (previousPrice != null || previousCostoPromedio != null) {
+                previousCostoToSet = previousCostoPromedio != null
+                    ? Number(previousCostoPromedio)
+                    : Number(previousPrice);
+                previousAppliedPrice = previousPrice != null
+                    ? Number(previousPrice)
+                    : previousCostoToSet;
+            }
 
             updateDoc = {
                 $inc: { stock: -Number(quantity) },
                 $set: {
                     price: previousAppliedPrice,
                     precio: previousAppliedPrice,
-                    costoPromedio: previousAverageCost,
+                    costoPromedio: previousCostoToSet,
                 },
             };
         }

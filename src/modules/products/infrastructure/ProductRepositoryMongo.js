@@ -53,11 +53,11 @@ class ProductRepositoryMongo {
         return await productModel.findByIdAndDelete(id);
     }
 
-    async updateStock(id, quantity) {
+    async updateStock(id, quantity, session) {
         return await productModel.findByIdAndUpdate(
             id,
             { $inc: { stock: quantity } },
-            { new: true }
+            { new: true, session }
         );
     }
 }

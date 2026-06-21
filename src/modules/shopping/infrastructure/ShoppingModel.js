@@ -44,6 +44,17 @@ const shoppingProductSchema = new mongoose.Schema(
             required: true,
             default: false,
         },
+        // Snapshot del estado previo del producto para permitir una reversión exacta
+        previousPrice: {
+            type: Number,
+            required: false,
+            default: null,
+        },
+        previousCostoPromedio: {
+            type: Number,
+            required: false,
+            default: null,
+        },
     },
     { _id: false },
 );
@@ -97,6 +108,11 @@ const shoppingSchema = new mongoose.Schema({
     cancelledAt: {
         type: Date,
         default: null,
+    },
+    // Información detallada de la anulación (motivo y fecha) para mostrar en frontend
+    infoAnulacion: {
+        motivo: { type: String, default: null },
+        fechaAnulacion: { type: Date, default: null },
     },
 });
 
