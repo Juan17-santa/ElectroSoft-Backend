@@ -1,23 +1,18 @@
-/**
- * Modelo de persistencia MongoDB para devoluciones.
- *
- * Define cómo se almacena una devolución en la base de datos.
- * Este archivo pertenece a infrastructure, por eso puede usar Mongoose.
- *
- * Campos principales:
- * - shoppingId: identificador de la compra asociada como dato simple.
- * - productos: productos incluidos en la devolución.
- * - estado: PENDIENTE o CONFIRMADA.
- * - impactApplied: marca de impacto simulado.
- * - fechaCreacion: fecha de registro en sistema.
- * - confirmadaEn: fecha de confirmación.
- */
 import mongoose from "mongoose";
+import {
+    DEVOLUTION_PRODUCT_REASONS,
+    DEVOLUTION_SPECIAL_STATES,
+    DEVOLUTION_STATES,
+} from "../domain/DevolutionEntity.js";
 
-// Subdocumento de producto devuelto.
 const devolutionProductSchema = new mongoose.Schema(
     {
         productoId: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        nombre: {
             type: String,
             required: true,
             trim: true,
@@ -30,18 +25,68 @@ const devolutionProductSchema = new mongoose.Schema(
         motivo: {
             type: String,
             required: true,
+            enum: DEVOLUTION_PRODUCT_REASONS,
+        },
+        submotivo: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+        condicionProducto: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+        gestion: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+        responsable: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+        garantiaProveedor: {
+            type: Boolean,
+            default: null,
+        },
+        descripcion: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        observaciones: {
+            type: String,
+            default: "",
             trim: true,
         },
     },
     { _id: false },
 );
 
-// Documento principal de devolución.
+const historialEstadoSchema = new mongoose.Schema(
+    {
+        estado: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        fecha: {
+            type: Date,
+            required: true,
+            default: Date.now,
+        },
+    },
+    { _id: false },
+);
+
 const devolutionSchema = new mongoose.Schema({
-    shoppingId: {
+    saleId: {
         type: String,
         required: true,
         trim: true,
+        index: true,
     },
     productos: {
         type: [devolutionProductSchema],
@@ -51,11 +96,29 @@ const devolutionSchema = new mongoose.Schema({
             message: "La devolucion debe tener al menos un producto",
         },
     },
-    estado: {
+    fechaDevolucion: {
         type: String,
         required: true,
-        default: "PENDIENTE",
-        enum: ["PENDIENTE", "CONFIRMADA"],
+        match: /^\d{4}-\d{2}-\d{2}$/,
+    },
+    estadoResolucion: {
+        type: String,
+        required: true,
+        default: "CREADA",
+        enum: [...DEVOLUTION_STATES, ...DEVOLUTION_SPECIAL_STATES],
+    },
+    historialEstados: {
+        type: [historialEstadoSchema],
+        default: [],
+    },
+    anulada: {
+        type: Boolean,
+        required: true,
+        default: false,
+    },
+    anuladaEn: {
+        type: Date,
+        default: null,
     },
     impactApplied: {
         type: Boolean,
@@ -63,6 +126,11 @@ const devolutionSchema = new mongoose.Schema({
         default: false,
     },
     fechaCreacion: {
+        type: Date,
+        required: true,
+        default: Date.now,
+    },
+    actualizadoEn: {
         type: Date,
         required: true,
         default: Date.now,

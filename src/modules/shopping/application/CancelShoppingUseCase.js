@@ -88,7 +88,7 @@ export default class CancelShoppingUseCase {
         };
     }
 
-    async execute(id) {
+    async execute(id, motivo = null) {
         const session = await this.transactionManager.startSession();
 
         try {
@@ -118,6 +118,8 @@ export default class CancelShoppingUseCase {
                         quantity: producto.quantity,
                         salePrice: producto.salePrice,
                         useSuggestedPrice: producto.useSuggestedPrice,
+                        previousPrice: producto.previousPrice ?? null,
+                        previousCostoPromedio: producto.previousCostoPromedio ?? null,
                     },
                     session,
                 );
@@ -127,11 +129,17 @@ export default class CancelShoppingUseCase {
                 }
             }
 
+            const cancellationInfo = {
+                motivo: motivo ?? "Anulada desde backend",
+                fechaAnulacion: now,
+            };
+
             const updatedShopping = await this.shoppingRepository.update(
                 id,
                 {
                     estado: "ANULADA",
                     cancelledAt: now,
+                    infoAnulacion: cancellationInfo,
                 },
                 session,
             );

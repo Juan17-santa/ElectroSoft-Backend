@@ -67,7 +67,9 @@ export const createShopping = async (req, res) => {
 export const cancelShopping = async (req, res) => {
     try {
         const useCase = new CancelShoppingUseCase(shoppingRepository, transactionManager, externalCatalogGateway);
-        const result = await useCase.execute(req.params.id);
+        // El frontend envía el motivo en `motivo` (payload JSON). Aceptamos también `reason`.
+        const motivo = req.body?.motivo ?? req.body?.reason ?? null;
+        const result = await useCase.execute(req.params.id, motivo);
 
         res.json({
             message: "Compra anulada con exito",
