@@ -50,7 +50,7 @@ export default class CreateSaleUseCase {
             // Crear la entidad con validaciones de dominio
             const sale = new SaleEntity({
                 ...saleData,
-                estado: "ACTIVA",
+                estado: saleData.estado || "ACTIVA",
                 impactApplied: false,
                 fechaCreacion: new Date(),
             });

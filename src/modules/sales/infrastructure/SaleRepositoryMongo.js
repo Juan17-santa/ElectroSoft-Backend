@@ -32,7 +32,7 @@ export default class SaleRepositoryMongo {
 
     async findActiveByInvoice(numeroFactura, session = null) {
         return await saleModel
-            .findOne({ numeroFactura: String(numeroFactura).trim(), estado: "ACTIVA" })
+            .findOne({ numeroFactura: String(numeroFactura).trim(), estado: { $in: ["ACTIVA", "Vigente"] }, })
             .session(session);
     }
 
