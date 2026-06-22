@@ -68,7 +68,7 @@ const saleSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: "ACTIVA",
-        enum: ["ACTIVA", "ANULADA"],
+        enum: ["ACTIVA", "Vigente", "ANULADA"],
     },
     impactApplied: {
         type: Boolean,
