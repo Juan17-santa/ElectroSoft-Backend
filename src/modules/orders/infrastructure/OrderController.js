@@ -24,10 +24,22 @@ import ConfirmOrderUseCase from "../application/ConfirmOrderUseCase.js";
 import OrderRepositoryMongo from "./OrderRepositoryMongo.js";
 import ProductRepositoryMongo from "../../products/infrastructure/ProductRepositoryMongo.js";
 import { clientRepository } from "../../clients/infrastructure/ClientRepository.js";
+import CreateSaleUseCase from "../../sales/application/CreateSaleUseCase.js";
+import SaleRepositoryMongo from "../../sales/infrastructure/SaleRepositoryMongo.js";
+import SaleExternalCatalogGatewayMongo from "../../sales/infrastructure/SaleExternalCatalogGatewayMongo.js";
+import SaleTransactionManagerMongo from "../../sales/infrastructure/SaleTransactionManagerMongo.js";
 
 const orderRepository = new OrderRepositoryMongo();
 const clientRepositoryInstance = clientRepository;
 const productRepository = new ProductRepositoryMongo();
+const saleRepository = new SaleRepositoryMongo();
+const saleExternalCatalogGateway = new SaleExternalCatalogGatewayMongo();
+const saleTransactionManager = new SaleTransactionManagerMongo();
+const createSaleUseCase = new CreateSaleUseCase(
+    saleRepository,
+    saleTransactionManager,
+    saleExternalCatalogGateway,
+);
 
 export const createOrder = async (req, res) => {
     try {
@@ -87,9 +99,10 @@ export const confirmOrder = async (req, res) => {
             return res.status(400).json({ error: "ID inválido" });
         }
 
-        const useCase = new ConfirmOrderUseCase(orderRepository);
+        const useCase = new ConfirmOrderUseCase(orderRepository, createSaleUseCase, productRepository, saleRepository);
         const result = await useCase.execute(id);
-        res.json({ message: "Pedido confirmado y eliminado de orders.", data: result });
+
+        res.json({ message: "Pedido confirmado, convertido en venta y eliminado de orders.", data: result });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

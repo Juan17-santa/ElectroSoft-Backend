@@ -44,6 +44,10 @@ class OrderRepositoryMongo {
         });
     }
 
+    async delete(id) {
+        return await orderModel.findByIdAndDelete(id);
+    }
+
     // 🚀 ACTUALIZACIÓN MASIVA (Para cuando listan todos los pedidos)
     async expirePendingOrders() {
         const now = new Date();
