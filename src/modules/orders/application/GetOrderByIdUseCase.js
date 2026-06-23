@@ -19,11 +19,9 @@ export default class GetOrderByIdUseCase {
             throw new Error("Pedido no encontrado");
         }
 
-        // 2. ¿Está pendiente y ya se pasó de la fecha de vencimiento?
         const isExpired = order.status === "Pendiente" && new Date(order.dueDate) < new Date();
 
         if (isExpired) {
-            // 3. Auto-expiración quirúrgica: procesa el stock y anula solo este pedido
             order = await this.orderRepository.expireSingleOrder(order);
         }
 

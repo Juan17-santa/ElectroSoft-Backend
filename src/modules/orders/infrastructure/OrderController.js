@@ -8,10 +8,6 @@
  * - Validar IDs y datos básicos.
  * - Invocar los casos de uso correspondientes.
  * - Enviar respuestas estructuradas.
- *
- * NOTA:
- * - El frontend ya gestiona el flujo de listado/creación/confirmación/anulación.
- * - Este controlador respeta ese flujo sin crear lógicas adicionales.
  */
 
 import mongoose from "mongoose";
@@ -76,13 +72,11 @@ export const getOrderById = async (req, res) => {
     }
 };
 
-// Dentro de tu archivo de controladores (donde tienes los demás métodos)
 export const cancelOrder = async (req, res) => {
     try {
         const { id } = req.params;
-        const { cancelReason } = req.body; // Asegúrate de que el front mande esto en el JSON body
+        const { cancelReason } = req.body;
 
-        // Instanciamos pasándole los DOS repositorios
         const useCase = new CancelOrderUseCase(orderRepository, productRepository);
         const result = await useCase.execute(id, cancelReason);
 

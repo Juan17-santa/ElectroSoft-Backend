@@ -37,7 +37,7 @@ export default class ConfirmOrderUseCase {
             throw new Error("Solo se pueden confirmar pedidos en estado Pendiente");
         }
 
-        // 1) Devolver el stock reservado por el pedido
+        // Devolver el stock reservado por el pedido ya que la venta se encargará de descontarlo nuevamente
         const revertedProducts = [];
         try {
             for (const item of order.products) {
@@ -54,12 +54,11 @@ export default class ConfirmOrderUseCase {
 
         let numeroFactura = "01";
         if (this.saleRepository) {
-            const allSales = await this.saleRepository.findAll(); // O el método que use tu repo para traer todo
+            const allSales = await this.saleRepository.findAll();
             const count = Array.isArray(allSales) ? allSales.length + 1 : 1;
             numeroFactura = String(count).padStart(2, '0');
         }
 
-        // 2) Preparar datos para crear la venta (CreateSaleUseCase se encargará de descontar stock)
         const saleData = {
             numeroFactura,
             clienteId: order.client?._id || order.client,
@@ -72,22 +71,18 @@ export default class ConfirmOrderUseCase {
             fechaVenta: order.orderDate ? new Date(order.orderDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
         };
 
-        // 3) Crear la venta usando la lógica existente de sales
         try {
             const createdSale = await this.createSaleUseCase.execute(saleData);
 
-            // 4) Si la venta se creó correctamente, eliminar el pedido
             await this.orderRepository.delete(id);
 
             return createdSale;
         } catch (createErr) {
-            // Si la creación de la venta falla, intentar re-reservar el stock para mantener el pedido coherente
             try {
                 for (const p of revertedProducts) {
                     await this.productRepository.updateStock(p.product, -Number(p.quantity));
                 }
             } catch (revertErr) {
-                // No enmascarar el error original, pero informar sobre el problema al re-reservar
                 throw new Error(`${createErr.message} (Además, no se pudo re-reservar stock: ${revertErr.message})`);
             }
 
