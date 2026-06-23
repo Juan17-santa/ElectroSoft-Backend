@@ -102,7 +102,7 @@ export default class CancelSaleUseCase {
         };
     }
 
-    async execute(id) {
+    async execute(id, motivo) {
         const session = await this.transactionManager.startSession();
 
         try {
@@ -146,6 +146,7 @@ export default class CancelSaleUseCase {
                 {
                     estado: "ANULADA",
                     anuladaEn: now,
+                    ...(motivo ? { observaciones: motivo } : {}),
                 },
                 session,
             );

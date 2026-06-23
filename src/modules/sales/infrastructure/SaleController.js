@@ -63,6 +63,7 @@ export const createSale = async (req, res) => {
 export const cancelSale = async (req, res) => {
     try {
         const { id } = req.params;
+        const { motivo } = req.body || {};
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
         }
@@ -72,7 +73,7 @@ export const cancelSale = async (req, res) => {
             transactionManager,
             externalCatalogGateway,
         );
-        const result = await useCase.execute(id);
+        const result = await useCase.execute(id, motivo);
 
         res.json({
             message: "Venta anulada con éxito",
