@@ -6,6 +6,7 @@ import DeleteClientUseCase from '../application/DeleteClientUseCase.js';
 import { clientRepository } from './ClientRepository.js';
 import DocumentTypeRepositoryMongo from '../../../shared/infrastructure/repositories/DocumentTypeRepositoryMongo.js';
 import mongoose from 'mongoose';
+import NotificationService from "../../notifications/application/NotificationService.js";
 import GetClientByDocumentUseCase from '../application/GetClientByDocumentUseCase.js';
 
 const documentTypeRepository = new DocumentTypeRepositoryMongo();
@@ -113,6 +114,18 @@ export const updateCupo = async (req, res) => {
         ).populate('documentType');
 
         if (!client) return res.status(404).json({ error: "Cliente no encontrado" });
+
+        // Emitir notificación si se le asignó/actualizó el cupo
+        if (cupoTotal !== undefined) {
+            const clientName = `${client.firstName} ${client.lastName}`.trim();
+            const formattedCupo = Number(cupoTotal).toLocaleString("es-CO");
+            await NotificationService.createNotification(
+                "Cupo Asignado",
+                `Se le ha asignado un cupo de $${formattedCupo} a ${clientName}.`,
+                "USER",
+                `/clients/${client._id}`
+            );
+        }
 
         res.status(200).json({ message: "Cupo/estado actualizado", client });
     } catch (error) {

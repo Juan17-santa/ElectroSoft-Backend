@@ -38,7 +38,9 @@ export default class CreateClientUseCase {
             createdAt: new Date()
         });
 
-        return await this.clientRepository.create(client);
+        const savedClient = await this.clientRepository.create(client);
+
+        return savedClient;
     }
 }
 

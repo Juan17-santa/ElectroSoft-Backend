@@ -14,6 +14,7 @@
  */
 import mongoose from "mongoose";
 import SaleEntity from "../domain/SaleEntity.js";
+import NotificationService from "../../notifications/application/NotificationService.js";
 
 function isValidObjectId(id) {
     if (!mongoose.Types.ObjectId.isValid(id)) return false;
@@ -78,6 +79,19 @@ export default class CreateSaleUseCase {
             );
 
             await session.commitTransaction();
+
+            // Obtener el nombre del cliente
+            const client = await this.externalCatalogGateway.findClientById(sale.clienteId, session);
+            const clientName = client ? ((client.firstName || '') + ' ' + (client.lastName || '')).trim() || "Desconocido" : "Desconocido";
+            const formattedTotal = updatedSale.total.toLocaleString("es-CO");
+
+            // Emitir notificación en tiempo real
+            await NotificationService.createNotification(
+                "Nueva Venta Registrada",
+                `Se ha registrado una nueva venta al cliente ${clientName} por $${formattedTotal}.`,
+                "SALE",
+                `/sales/${updatedSale._id}`
+            );
 
             return updatedSale;
         } catch (error) {
