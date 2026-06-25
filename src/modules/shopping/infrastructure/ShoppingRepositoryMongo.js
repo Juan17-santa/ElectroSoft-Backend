@@ -22,20 +22,25 @@ export default class ShoppingRepositoryMongo {
     }
 
     async findById(id, session = null) {
-        return await shoppingModel.findById(id).session(session);
+        return await shoppingModel.findById(id)
+            .populate('providerId', 'providerName')
+            .populate('products.productId', 'name')
+            .session(session);
     }
 
 
     async findActiveByInvoice(invoiceNumber, session = null) {
         return await shoppingModel
             .findOne({ invoiceNumber: String(invoiceNumber).trim(), estado: "ACTIVA" })
+            .populate('providerId', 'providerName')
+            .populate('products.productId', 'name')
             .session(session);
     }
 
     async findByProviderId(providerId) {
-        return await shoppingModel.find({
-            providerId: providerId
-        });
+        return await shoppingModel.find({ providerId: providerId })
+            .populate('providerId', 'providerName')
+            .populate('products.productId', 'name');
     }
     
     async update(id, data, session) {
@@ -48,6 +53,9 @@ export default class ShoppingRepositoryMongo {
     }
 
     async findAll() {
-        return await shoppingModel.find().sort({ createdAt: -1 });
+        return await shoppingModel.find()
+            .populate('providerId', 'providerName')
+            .populate('products.productId', 'name')
+            .sort({ createdAt: -1 });
     }
 }

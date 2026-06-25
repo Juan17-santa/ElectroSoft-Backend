@@ -15,6 +15,7 @@ import userRouter from "./modules/users/infrastructure/UserRoutes.js";
 import roleRouter from "./modules/roles/infrastructure/RoleRoutes.js";
 import saleRouter from "./modules/sales/infrastructure/SaleRoutes.js";
 import paymentRouter from "./modules/payments/infrastructure/PaymentRoutes.js";
+import notificationRouter from "./modules/notifications/infrastructure/NotificationRoutes.js";
 
 const app = express();
 
@@ -43,5 +44,6 @@ app.use("/api/users", userRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/sales", saleRouter);
 app.use("/api/payments", paymentRouter);
+app.use("/api/notifications", notificationRouter);
 
 export default app;

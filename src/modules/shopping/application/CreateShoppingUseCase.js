@@ -16,6 +16,7 @@
  */
 import mongoose from "mongoose";
 import ShoppingEntity from "../domain/ShoppingEntity.js";
+import NotificationService from "../../notifications/application/NotificationService.js";
 
 function isValidObjectId(id) {
     if (!mongoose.Types.ObjectId.isValid(id)) return false;
@@ -98,6 +99,17 @@ export default class CreateShoppingUseCase {
             );
 
             await session.commitTransaction();
+
+            const provider = await this.externalCatalogGateway.findProviderById(shopping.providerId, session);
+            const providerName = provider ? (provider.providerName || "Desconocido") : "Desconocido";
+            const formattedTotal = updatedShopping.total.toLocaleString("es-CO");
+
+            await NotificationService.createNotification(
+                "Nueva Compra Registrada",
+                `Se ha registrado una compra al proveedor ${providerName} por $${formattedTotal}.`,
+                "PAYMENT",
+                `/shopping/${updatedShopping._id}`
+            );
 
             return updatedShopping;
         } catch (error) {

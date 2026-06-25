@@ -1,4 +1,5 @@
 import OrderEntity from "../domain/OrderEntity.js";
+import NotificationService from "../../notifications/application/NotificationService.js";
 
 export default class CreateOrderUseCase {
     constructor(orderRepository, clientRepository, productRepository) {
@@ -117,6 +118,18 @@ export default class CreateOrderUseCase {
 
         // 8. Guardar el Pedido
         const savedOrder = await this.orderRepository.create(newOrderEntity);
+
+        const clientName = clientExists ? ((clientExists.firstName || '') + ' ' + (clientExists.lastName || '')).trim() || "Desconocido" : "Desconocido";
+        const formattedTotal = savedOrder.total.toLocaleString("es-CO");
+
+        // Emitir notificación
+        await NotificationService.createNotification(
+            "Nuevo Pedido Registrado",
+            `Se ha registrado un nuevo pedido al cliente ${clientName} por $${formattedTotal}.`,
+            "SALE", // We can use SALE or introduce ORDER
+            `/orders/${savedOrder._id}`
+        );
+
         return savedOrder;
     }
 }
