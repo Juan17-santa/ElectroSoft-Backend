@@ -15,6 +15,8 @@
  */
 
 import { productModel } from "./ProductModel.js";
+import { orderModel } from "../../orders/infrastructure/OrderModel.js";
+import { saleModel } from "../../sales/infrastructure/SaleModel.js";
 
 class ProductRepositoryMongo {
 
@@ -24,13 +26,33 @@ class ProductRepositoryMongo {
     }
 
     async findAll() {
-        return await productModel.find()
+        const products = await productModel.find()
             .populate("categoryId", "name description status")
             .sort({ createdAt: -1 });
+
+        const productIds = products.map(product => product._id);
+        const associatedIds = await this.buildAssociatedProductIds(productIds);
+
+        return products.map(product => {
+            const item = product.toObject();
+            return {
+                ...item,
+                canDelete: !associatedIds.has(item._id.toString())
+            };
+        });
     }
 
     async findById(id) {
-        return await productModel.findById(id).populate("categoryId", "name description status");
+        const product = await productModel.findById(id).populate("categoryId", "name description status");
+        if (!product) return null;
+
+        const associatedIds = await this.buildAssociatedProductIds([product._id]);
+        const item = product.toObject();
+
+        return {
+            ...item,
+            canDelete: !associatedIds.has(item._id.toString())
+        };
     }
 
     async findByName(name) {
@@ -59,6 +81,32 @@ class ProductRepositoryMongo {
             { $inc: { stock: quantity } },
             { new: true, session }
         );
+    }
+
+    async buildAssociatedProductIds(productIds) {
+        if (!productIds || productIds.length === 0) {
+            return new Set();
+        }
+
+        const orderAssociations = await orderModel.aggregate([
+            { $match: { "products.product": { $in: productIds } } },
+            { $unwind: "$products" },
+            { $match: { "products.product": { $in: productIds } } },
+            { $group: { _id: "$products.product" } }
+        ]);
+
+        const saleAssociations = await saleModel.aggregate([
+            { $match: { "productos.productoId": { $in: productIds } } },
+            { $unwind: "$productos" },
+            { $match: { "productos.productoId": { $in: productIds } } },
+            { $group: { _id: "$productos.productoId" } }
+        ]);
+
+        const associatedIds = new Set();
+        orderAssociations.forEach(item => associatedIds.add(item._id.toString()));
+        saleAssociations.forEach(item => associatedIds.add(item._id.toString()));
+
+        return associatedIds;
     }
 }
 
