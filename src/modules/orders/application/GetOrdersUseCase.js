@@ -12,7 +12,7 @@ export default class GetOrdersUseCase {
     }
 
     async execute() {
-        await this.orderRepository.expirePendingOrders(); // Limpieza masiva con stock
+        await this.orderRepository.expirePendingOrders();
         return await this.orderRepository.findAll();
     }
 }

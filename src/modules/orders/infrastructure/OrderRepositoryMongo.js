@@ -5,10 +5,6 @@
  * - Interactuar directamente con la colección de órdenes.
  * - Exponer operaciones CRUD para el módulo orders.
  * - Aplicar la anulación automática de pedidos pendientes cuando corresponde.
- *
- * NOTA:
- * El flujo de anulación automática se ejecuta al consultar pedidos.
- * Esto hace compatible la lógica con la arquitectura actual sin requerir un scheduler externo.
  */
 
 import { productModel } from "../../products/infrastructure/ProductModel.js";
@@ -48,29 +44,24 @@ class OrderRepositoryMongo {
         return await orderModel.findByIdAndDelete(id);
     }
 
-    // 🚀 ACTUALIZACIÓN MASIVA (Para cuando listan todos los pedidos)
     async expirePendingOrders() {
         const now = new Date();
 
-        // 1. Buscar cuáles se van a vencer para poder devolverles el stock
         const expiredOrders = await orderModel.find({
             status: "Pendiente",
             dueDate: { $lt: now }
         });
 
-        // Si no hay ninguno vencido, nos ahorramos el updateMany
         if (expiredOrders.length === 0) return;
 
-        // 2. Devolver el stock de todos los productos de esos pedidos vencidos
         for (const order of expiredOrders) {
             for (const item of order.products) {
                 await productModel.findByIdAndUpdate(item.product, {
-                    $inc: { stock: item.quantity } // Suma la cantidad de vuelta al stock
+                    $inc: { stock: item.quantity }
                 });
             }
         }
 
-        // 3. 🛡️ CORRECCIÓN: Guardar el motivo y fecha automática en el updateMany para que el Front los muestre
         return await orderModel.updateMany(
             { status: "Pendiente", dueDate: { $lt: now } },
             {
@@ -81,18 +72,15 @@ class OrderRepositoryMongo {
         );
     }
 
-    // 🎯 ACTUALIZACIÓN QUIRÚRGICA (Para cuando consultan un solo pedido por ID)
     async expireSingleOrder(order) {
         const now = new Date();
 
-        // Devolvemos el stock de este pedido en específico
         for (const item of order.products) {
             await productModel.findByIdAndUpdate(item.product, {
                 $inc: { stock: item.quantity }
             });
         }
 
-        // Cambiamos el estado a Anulado, agregamos el motivo automático y guardamos
         order.status = "Anulado";
         order.cancelReason = "Pedido anulado automáticamente por vencimiento de fecha.";
         order.canceledAt = now;

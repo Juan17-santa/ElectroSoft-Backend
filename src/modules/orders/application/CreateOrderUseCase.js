@@ -9,7 +9,6 @@ export default class CreateOrderUseCase {
     }
 
     async execute(orderData) {
-        // 🛡️ 1. CONTROL DE NULOS PREVENTIVO (Para que no colapse al leer propiedades)
         if (!orderData) {
             throw new Error("No se recibieron datos para procesar el pedido.");
         }
@@ -17,13 +16,11 @@ export default class CreateOrderUseCase {
             throw new Error("Debe agregar al menos un producto");
         }
 
-        // 2. Verificar si el cliente existe antes de avanzar
         const clientExists = await this.clientRepository.findById(orderData.client);
         if (!clientExists) {
-            throw new Error("Cliente no encontrado"); // Mismo mensaje de tu entidad para mantener coherencia
+            throw new Error("Cliente no encontrado");
         }
 
-        // 3. Calcular automáticamente las fechas (Max 4 días atrás)
         const orderDate = orderData.orderDate ? new Date(orderData.orderDate) : new Date();
         const today = new Date();
         const minDate = new Date();
@@ -35,12 +32,10 @@ export default class CreateOrderUseCase {
         const dueDate = new Date(orderDate);
         dueDate.setDate(dueDate.getDate() + 15);
 
-        // 4. Recalcular, verificar Precios y validar STOCK
         let calculatedTotal = 0;
         const validatedProducts = [];
 
         for (const item of orderData.products) {
-            // Validación preventiva rápida por si mandan [{}] vacío dentro del array
             if (!item.product) {
                 throw new Error("Debe incluir el identificador del producto.");
             }
@@ -50,7 +45,6 @@ export default class CreateOrderUseCase {
                 throw new Error(`El producto con ID ${item.product} no existe.`);
             }
 
-            // 🔥 VALIDACIÓN DE STOCK
             if (dbProduct.stock < item.quantity) {
                 throw new Error(`Stock insuficiente para "${dbProduct.name}". Disponible: ${dbProduct.stock}, Solicitado: ${item.quantity}`);
             }
@@ -70,12 +64,10 @@ export default class CreateOrderUseCase {
             calculatedTotal += lineTotal;
         }
 
-        // Calcular IVA y Subtotal
         const IVA_PERCENTAGE = 0.19;
         const calculatedIva = Math.round(calculatedTotal * IVA_PERCENTAGE);
         const calculatedSubtotal = calculatedTotal - calculatedIva;
 
-        // 5. Validar Regla de Negocio: Crédito
         if (orderData.paymentMethod === "Credito") {
             if (!clientExists.cupoActivo) {
                 throw new Error(
@@ -96,8 +88,6 @@ export default class CreateOrderUseCase {
             }
         }
 
-        // 6. Instanciar la Entidad de Dominio
-        // Aquí es donde actúan TODAS las validaciones de formato de tu OrderEntity (documento, tipos de datos, etc.)
         const newOrderEntity = new OrderEntity({
             documentNumber: orderData.documentNumber,
             client: clientExists._id,
@@ -111,12 +101,10 @@ export default class CreateOrderUseCase {
             status: "Pendiente"
         });
 
-        // 7. 🔥 DESCONTAR EL STOCK EN LA BASE DE DATOS (Solo si la entidad se creó sin errores)
         for (const item of validatedProducts) {
             await this.productRepository.updateStock(item.product, -item.quantity);
         }
 
-        // 8. Guardar el Pedido
         const savedOrder = await this.orderRepository.create(newOrderEntity);
 
         const clientName = clientExists ? ((clientExists.firstName || '') + ' ' + (clientExists.lastName || '')).trim() || "Desconocido" : "Desconocido";

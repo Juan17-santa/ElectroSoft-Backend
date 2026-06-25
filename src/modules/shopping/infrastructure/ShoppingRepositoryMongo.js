@@ -16,15 +16,15 @@ import { shoppingModel } from "./ShoppingModel.js";
 
 export default class ShoppingRepositoryMongo {
     async create(data, session) {
-        // create con array permite asociar correctamente la session de Mongoose.
         const [shopping] = await shoppingModel.create([data], { session });
         return shopping;
     }
 
     async findById(id, session = null) {
-        return await shoppingModel.findById(id)
-            .populate('providerId', 'providerName')
-            .populate('products.productId', 'name')
+        return await shoppingModel
+            .findById(id)
+            .populate("providerId", "providerName")
+            .populate("products.productId", "name price")
             .session(session);
     }
 
@@ -42,20 +42,26 @@ export default class ShoppingRepositoryMongo {
             .populate('providerId', 'providerName')
             .populate('products.productId', 'name');
     }
-    
+
     async update(id, data, session) {
         return await shoppingModel.findByIdAndUpdate(id, data, {
             returnDocument: "after",
             session,
-            // Ejecuta validaciones declaradas en el schema al actualizar.
             runValidators: true,
         });
     }
 
     async findAll() {
+<<<<<<< HEAD
         return await shoppingModel.find()
             .populate('providerId', 'providerName')
             .populate('products.productId', 'name')
+=======
+        return await shoppingModel
+            .find()
+            .populate("providerId", "providerName")
+            .populate("products.productId", "name")
+>>>>>>> cab04ab1b0fa363ba12a6443b0d5fc2c642059d1
             .sort({ createdAt: -1 });
     }
 }

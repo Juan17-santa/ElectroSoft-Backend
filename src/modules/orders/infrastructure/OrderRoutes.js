@@ -22,10 +22,10 @@ import {
 
 const router = Router();
 
-router.post("/", createOrder); // LISTOOO **** cuadrar el iva
-router.get("/", getOrders); // LISTOOO
-router.get("/:id", getOrderById); // LISTOOOO
-router.patch("/:id/cancel", cancelOrder); /// LISTO
+router.post("/", createOrder);
+router.get("/", getOrders);
+router.get("/:id", getOrderById);
+router.patch("/:id/cancel", cancelOrder);
 router.patch("/:id/confirm", confirmOrder);
 
 export default router;
