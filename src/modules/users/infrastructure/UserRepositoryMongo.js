@@ -1,3 +1,4 @@
+// modules/users/infrastructure/userRepository.js
 import { UserModel } from "./UserModel.js";
 
 export const userRepository = {
@@ -40,20 +41,21 @@ export const userRepository = {
 
   update: async (id, userData) => {
     const result = await UserModel.findByIdAndUpdate(
-        id,
-        { $set: userData }, 
-        {
-            new: true,
-            runValidators: true,
-        }
+      id,
+      { $set: userData },
+      { new: true, runValidators: true }
     )
-        .select("-password")
-        .populate("documentType", "name abbreviation")
-        .populate("role", "name permissions isActive");
+      .select("-password")
+      .populate("documentType", "name abbreviation")
+      .populate("role", "name permissions isActive");
     return result;
-},
+  },
 
   delete: async (id) => {
     return await UserModel.findByIdAndDelete(id);
+  },
+
+  findByRole: async (roleId) => {
+    return await UserModel.find({ role: roleId }).select("fullName email");
   },
 };
