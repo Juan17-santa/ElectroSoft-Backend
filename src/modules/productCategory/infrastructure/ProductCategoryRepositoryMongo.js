@@ -15,6 +15,7 @@
 
 import { productCategoryModel } from "./ProductCategoryModel.js";
 import { productModel } from "../../products/infrastructure/ProductModel.js";
+import { providerModel } from "../../providers/infrastructure/ProviderModel.js";
 
 class ProductCategoryRepositoryMongo {
 
@@ -28,23 +29,55 @@ class ProductCategoryRepositoryMongo {
             .find()
             .sort({ createdAt: -1 });
 
-        const categoriesWithCount = await Promise.all(
+        const categoriesWithRelations = await Promise.all(
             categories.map(async (category) => {
-                const count = await productModel.countDocuments({
+
+                const productsCount = await productModel.countDocuments({
                     categoryId: category._id
+                });
+
+                const providersCount = await providerModel.countDocuments({
+                    categoriesAssociated: category._id
                 });
 
                 return {
                     ...category.toObject(),
-                    productsCount: count
+                    productsCount,
+                    providersCount,
+                    canDelete: productsCount === 0 && providersCount === 0,
+                    deleteReason:
+                        productsCount > 0 && providersCount > 0
+                            ? `Tiene ${productsCount} productos y ${providersCount} proveedores asociados`
+                            : productsCount > 0
+                                ? `Tiene ${productsCount} productos asociados`
+                                : providersCount > 0
+                                    ? `Tiene ${providersCount} proveedores asociados`
+                                    : null
                 };
             })
         );
-        return categoriesWithCount;
+        return categoriesWithRelations;
     }
 
     async findById(id) {
-        return await productCategoryModel.findById(id);
+        const category = await productCategoryModel.findById(id);
+
+        if (!category) return null;
+
+        const productsCount = await productModel.countDocuments({
+            categoryId: category._id
+        });
+
+        const providersCount = await providerModel.countDocuments({
+            categoriesAssociated: category._id
+        });
+
+        return {
+            ...category.toObject(),
+            productsCount,
+            providersCount,
+            canDelete: productsCount === 0 && providersCount === 0
+        };
     }
 
     async findByIds(ids) {
