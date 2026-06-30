@@ -22,6 +22,7 @@ export default class SaleEntity {
         fechaCreacion = new Date(),
         anuladaEn = null,
         tipoVenta = "Contado",
+        diasPlazo = null,
         observaciones = "",
     }) {
         // VALIDACIÓN: NÚMERO DE FACTURA
@@ -75,6 +76,7 @@ export default class SaleEntity {
         this.fechaCreacion = fechaCreacion;
         this.anuladaEn = anuladaEn;
         this.tipoVenta = tipoVenta || "Contado";
+        this.diasPlazo = diasPlazo;
         this.observaciones = observaciones || "";
     }
 
