@@ -6,6 +6,7 @@ import DeleteRoleUseCase from "../application/DeleteRoleUseCase.js";
 import GetValidPermissionsUseCase from "../application/GetValidPermissionsUseCase.js";
 import { roleRepository } from "./RoleRepositoryMongo.js";
 import ToggleRoleStatusUseCase from "../../roles/application/ToggleRoleStatusUseCase.js";
+import { userRepository } from "../../users/infrastructure/UserRepositoryMongo.js";
 
 
 const toggleRoleStatus = new ToggleRoleStatusUseCase(roleRepository);
@@ -13,7 +14,7 @@ const getRoles = new GetRolesUseCase(roleRepository);
 const getRoleById = new GetRoleByIdUseCase(roleRepository);
 const createRole = new CreateRoleUseCase(roleRepository);
 const updateRole = new UpdateRoleUseCase(roleRepository);
-const deleteRole = new DeleteRoleUseCase(roleRepository);
+const deleteRole = new DeleteRoleUseCase(roleRepository, userRepository);
 const getValidPermissions = new GetValidPermissionsUseCase();
 
 export const RoleController = {
@@ -61,10 +62,11 @@ export const RoleController = {
       await deleteRole.execute(req.params.id);
       res.json({ success: true, message: "Rol eliminado correctamente" });
     } catch (error) {
+      console.log("ERROR ELIMINAR ROL:", error.message); // ← agrega esto
       const status =
         error.message === "Rol no encontrado"
           ? 404
-          : error.message.includes("No se pueden eliminar")
+          : error.message.includes("No se pueden eliminar") || error.message.includes("No se puede eliminar")
             ? 403
             : 500;
       res.status(status).json({ success: false, message: error.message });

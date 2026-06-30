@@ -14,6 +14,7 @@
  */
 
 import { providerModel } from "./ProviderModel.js"
+import { shoppingModel } from "../../shopping/infrastructure/ShoppingModel.js";
 
 class ProviderRepositoryMongo {
 
@@ -23,16 +24,52 @@ class ProviderRepositoryMongo {
     }
 
     async findAll() {
-        return await providerModel.find()
+        const providers = await providerModel.find()
             .populate("documentType")
             .populate("categoriesAssociated")
             .sort({ createdAt: -1 });
+
+        const providersWithRelations = await Promise.all(
+            providers.map(async (provider) => {
+
+                const shoppingCount = await shoppingModel.countDocuments({
+                    providerId: provider._id
+                });
+
+                return {
+                    ...provider.toObject(),
+                    shoppingCount,
+                    canDelete: shoppingCount === 0,
+                    deleteReason:
+                        shoppingCount > 0
+                            ? `Tiene ${shoppingCount} compra(s) asociada(s)`
+                            : null
+                };
+            })
+        );
+        return providersWithRelations;
     }
 
     async findById(id) {
-        return await providerModel.findById(id)
+        const provider = await providerModel.findById(id)
             .populate("documentType")
             .populate("categoriesAssociated");
+
+        if (!provider) return null;
+
+        const shoppingCount = await shoppingModel.countDocuments({
+            providerId: provider._id
+        });
+
+        return {
+            ...provider.toObject(),
+            shoppingCount,
+            canDelete: shoppingCount === 0,
+            deleteReason:
+                shoppingCount > 0
+                    ? `Tiene ${shoppingCount} compra(s) asociada(s)`
+                    : null
+        };
     }
 
     async findByDocument(document) {

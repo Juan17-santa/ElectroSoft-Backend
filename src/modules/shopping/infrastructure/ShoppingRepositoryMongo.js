@@ -52,10 +52,9 @@ export default class ShoppingRepositoryMongo {
     }
 
     async findAll() {
-        return await shoppingModel
-            .find()
-            .populate("providerId", "providerName")
-            .populate("products.productId", "name")
+        return await shoppingModel.find()
+            .populate('providerId', 'providerName')
+            .populate('products.productId', 'name')
             .sort({ createdAt: -1 });
     }
 }
