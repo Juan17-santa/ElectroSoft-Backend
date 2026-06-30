@@ -92,7 +92,11 @@ const saleSchema = new mongoose.Schema({
     tipoVenta: {
         type: String,
         default: "Contado",
-        enum: ["Contado", "Crédito"],
+        enum: ["Contado", "Crédito", "Credito"],
+    },
+    diasPlazo: {
+        type: Number,
+        default: null,
     },
     observaciones: {
         type: String,
