@@ -76,8 +76,12 @@ class ProviderRepositoryMongo {
         return await providerModel.findOne({ document });
     }
 
+    async findByEmail(email) {
+        return await providerModel.findOne({ email });
+    }
+
     async update(id, providerData) {
-        return await providerModel.findByIdAndUpdate(id, providerData, { new: true });
+        return await providerModel.findByIdAndUpdate(id, providerData, { new: true, runValidators: true });
     }
 
     async delete(id) {
