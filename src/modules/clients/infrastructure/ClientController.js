@@ -110,7 +110,7 @@ export const updateCupo = async (req, res) => {
         const client = await ClientModel.findByIdAndUpdate(
             id,
             { $set: updateData },
-            { new: true }
+            { returnDocument: "after" }
         ).populate('documentType');
 
         if (!client) return res.status(404).json({ error: "Cliente no encontrado" });

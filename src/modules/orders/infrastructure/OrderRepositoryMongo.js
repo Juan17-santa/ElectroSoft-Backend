@@ -35,7 +35,7 @@ class OrderRepositoryMongo {
 
     async update(id, orderData) {
         return await orderModel.findByIdAndUpdate(id, orderData, {
-            new: true,
+            returnDocument: "after",
             runValidators: true,
         });
     }

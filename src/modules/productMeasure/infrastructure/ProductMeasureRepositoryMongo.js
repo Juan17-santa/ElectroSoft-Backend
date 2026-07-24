@@ -27,7 +27,7 @@ class ProductMeasureRepositoryMongo {
     }
 
     async update(id, measureData) {
-        return await ProductMeasureModel.findByIdAndUpdate(id, measureData, { new: true });
+        return await ProductMeasureModel.findByIdAndUpdate(id, measureData, { returnDocument: "after" });
     }
 
     async delete(id) {

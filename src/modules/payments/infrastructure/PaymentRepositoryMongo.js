@@ -41,7 +41,7 @@ export default class PaymentRepositoryMongo {
         return await paymentModel.findByIdAndUpdate(
             id,
             { $set: { estado: "ANULADO" } },
-            { new: true }
+            { returnDocument: "after" }
         );
     }
 }
