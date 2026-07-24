@@ -84,7 +84,7 @@ export default class SaleExternalCatalogGatewayMongo {
         return await ClientModel.findByIdAndUpdate(
             clientId,
             { totalCompras: nuevoTotal },
-            { new: true, session }
+            { returnDocument: "after", session }
         );
     }
 
@@ -99,7 +99,7 @@ export default class SaleExternalCatalogGatewayMongo {
         return await ClientModel.findByIdAndUpdate(
             clientId,
             { totalCompras: nuevoTotal },
-            { new: true, session }
+            { returnDocument: "after", session }
         );
     }
 }

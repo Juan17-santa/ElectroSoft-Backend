@@ -91,7 +91,7 @@ class ProductCategoryRepositoryMongo {
     }
 
     async update(id, categoryData) {
-        return await productCategoryModel.findByIdAndUpdate(id, categoryData, { new: true });
+        return await productCategoryModel.findByIdAndUpdate(id, categoryData, { returnDocument: "after" });
     }
 
     async delete(id) {

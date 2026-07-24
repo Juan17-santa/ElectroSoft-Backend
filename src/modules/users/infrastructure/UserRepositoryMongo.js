@@ -43,7 +43,7 @@ export const userRepository = {
     const result = await UserModel.findByIdAndUpdate(
       id,
       { $set: userData },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     )
       .select("-password")
       .populate("documentType", "name abbreviation")
