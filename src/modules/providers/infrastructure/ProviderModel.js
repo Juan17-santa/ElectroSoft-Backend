@@ -20,14 +20,19 @@ import mongoose from "mongoose";
 
 const providerSchema = new mongoose.Schema({
 
+    providerName: { type: String, required: true, trim: true },
     providerType: { type: String, enum: ["NATURAL", "JURIDICA"], required: true },
     documentType: { type: mongoose.Schema.Types.ObjectId, ref: "DocumentType", required: true },
     document: { type: String, required: true, unique: true, trim: true },
-    providerName: { type: String, required: true, trim: true },
+
+    providerEmail: { type: String, required: true, unique: true, trim: true, lowercase: true},
+    providerPhone: { type: String, required: true, trim: true },
+
     contactName: { type: String, required: true, trim: true },
-    contactPhone: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, trim: true, lowercase: true},
+    contactEmail: { type: String, unique: true, trim: true, lowercase: true, default: null },
+    contactPhone: { type: String, trim: true, default: null },
     address: { type: String, required: true, trim: true },
+    
     categoriesAssociated: [{ type: mongoose.Schema.Types.ObjectId, ref: "ProductCategory" }],
     status: { type: Boolean, default: true }
 }, {

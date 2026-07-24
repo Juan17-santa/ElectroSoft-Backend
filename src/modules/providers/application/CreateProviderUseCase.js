@@ -27,9 +27,11 @@ export default class CreateProviderUseCase {
             document,
             providerName,
             contactName,
-            contactPhone,
-            email,
+            providerPhone,
+            providerEmail,
             address,
+            contactEmail,
+            contactPhone,
             categoriesAssociated = [],
             status
         } = providerData;
@@ -48,9 +50,11 @@ export default class CreateProviderUseCase {
             document,
             providerName,
             contactName: finalContactName,
-            contactPhone,
-            email,
+            providerPhone,
+            providerEmail,
             address,
+            contactEmail,
+            contactPhone,
             categoriesAssociated,
             status
         });
@@ -74,9 +78,17 @@ export default class CreateProviderUseCase {
             throw new Error("Este documento ya se encuentra registrado")
         }
 
-        const emailExists = await this.providerRepository.findByEmail(email);
+        const emailExists = await this.providerRepository.findByEmail(providerEmail);
         if (emailExists) {
             throw new Error("Este correo ya se encuentra registrado");
+        }
+
+        if (providerType === "JURIDICA") {
+            const ContactEmailExists = await this.providerRepository.findByContactEmail(contactEmail);
+
+            if (ContactEmailExists) {
+                throw new Error("Este correo de empresa ya se encuentra registrado");
+            }
         }
 
         // Validar que las categorias existen

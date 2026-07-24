@@ -12,6 +12,8 @@
  * - El nombre del contacto es obligatorio, debe ser un string y solo puede contener letras.
  * - El teléfono es obligatorio, debe ser un string, solo puede contener números y debe tener entre 8 y 14 dígitos.
  * - El correo es obligatorio, debe ser un string y debe tener un formato válido.
+ * - Si el proveedor es JURIDICA, el correo de la empresa es obligatorio y debe tener un formato válido.
+ * - Si el proveedor es JURIDICA, el teléfono de la empresa es obligatorio, solo puede contener números y debe tener entre 8 y 14 dígitos.
  * - La dirección es obligatoria y debe ser un string.
  * - Las categorías asociadas deben ser un arreglo.
  */
@@ -24,9 +26,11 @@ export default class ProviderEntity {
         document,
         providerName,
         contactName,
-        contactPhone,
-        email,
+        providerPhone,
+        providerEmail,
         address,
+        contactEmail,
+        contactPhone,
         categoriesAssociated = [],
         status
     }) {
@@ -79,7 +83,7 @@ export default class ProviderEntity {
         }
 
         // VALIDACIÓN: NOMBRE CONTACTO
-        if (providerType === "NATURAL" && !contactName) {
+        if (providerType === "NATURAL") {
             contactName = providerName;
         }
 
@@ -97,34 +101,68 @@ export default class ProviderEntity {
         }
 
         // VALIDACIÓN: TELÉFONO
-        if (!contactPhone) {
+        if (!providerPhone) {
             throw new Error("El teléfono es obligatorio");
         }
 
-        if (typeof contactPhone !== "string") {
+        if (typeof providerPhone !== "string") {
             throw new Error("El teléfono debe ser un texto");
         }
 
-        if (!onlyNumbers.test(contactPhone)) {
+        if (!onlyNumbers.test(providerPhone)) {
             throw new Error("El teléfono solo puede contener números");
         }
 
-        if (contactPhone.length < 8 || contactPhone.length > 14) {
+        if (providerPhone.length < 8 || providerPhone.length > 14) {
             throw new Error("El teléfono debe tener entre 8 y 14 dígitos");
         }
 
         // VALIDACION: EMAIL
-        if (!email) {
+        if (!providerEmail) {
             throw new Error("El correo es obligatorio");
         }
 
-        if (typeof email !== "string") {
+        if (typeof providerEmail !== "string") {
             throw new Error("El correo debe ser un texto");
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+        if (!emailRegex.test(providerEmail)) {
             throw new Error("El correo no es válido");
+        }
+
+        // VALIDACIÓN: CORREO EMPRESA
+        if (providerType === "JURIDICA") {
+            if (!contactEmail) {
+                throw new Error("El correo de la empresa es obligatorio");
+            }
+
+            if (typeof contactEmail !== "string") {
+                throw new Error("El correo de la empresa debe ser un texto");
+            }
+
+            if (!emailRegex.test(contactEmail)) {
+                throw new Error("El correo de la empresa no es válido");
+            }
+        }
+
+        // VALIDACIÓN: TELÉFONO EMPRESA
+        if (providerType === "JURIDICA") {
+            if (!contactPhone) {
+                throw new Error("El teléfono de la empresa es obligatorio");
+            }
+
+            if (typeof contactPhone !== "string") {
+                throw new Error("El teléfono de la empresa debe ser un texto");
+            }
+
+            if (!onlyNumbers.test(contactPhone)) {
+                throw new Error("El teléfono de la empresa solo puede contener números");
+            }
+
+            if (contactPhone.length < 8 || contactPhone.length > 14) {
+                throw new Error("El teléfono de la empresa debe tener entre 8 y 14 dígitos");
+            }
         }
 
         // VALIDACION: DIRECCIÓN
@@ -147,8 +185,10 @@ export default class ProviderEntity {
         this.document = document.trim();
         this.providerName = providerName.trim();
         this.contactName = contactName.trim();
-        this.contactPhone = contactPhone.trim();
-        this.email = email.trim().toLowerCase();
+        this.providerPhone = providerPhone.trim();
+        this.providerEmail = providerEmail.trim().toLowerCase();
+        this.contactEmail = contactEmail ? contactEmail.trim().toLowerCase() : null;
+        this.contactPhone = contactPhone ? contactPhone.trim() : null;
         this.address = address.trim();
         this.categoriesAssociated = categoriesAssociated;
         this.status = status;

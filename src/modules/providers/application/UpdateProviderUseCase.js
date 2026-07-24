@@ -27,9 +27,11 @@ export default class UpdateProviderUseCase {
             document,
             providerName,
             contactName,
-            contactPhone,
-            email,
+            providerPhone,
+            providerEmail,
             address,
+            contactEmail,
+            contactPhone,
             categoriesAssociated,
         } = providerData;
 
@@ -53,9 +55,11 @@ export default class UpdateProviderUseCase {
             document,
             providerName,
             contactName: finalContactName,
-            contactPhone,
-            email,
+            providerPhone,
+            providerEmail,
             address,
+            contactEmail,
+            contactPhone,
             categoriesAssociated,
             status: existingProvider.status
         });
@@ -82,10 +86,22 @@ export default class UpdateProviderUseCase {
             }
         }
 
-        if (email && email !== existingProvider.email) {
-            const exists = await this.providerRepository.findByEmail(email);
+        if (providerEmail && providerEmail !== existingProvider.providerEmail) {
+            const exists = await this.providerRepository.findByEmail(providerEmail);
             if (exists) {
                 throw new Error("Este correo ya se encuentra registrado");
+            }
+        }
+
+        if (
+            providerType === "JURIDICA" &&
+            contactEmail &&
+            contactEmail !== existingProvider.contactEmail
+        ) {
+            const exists = await this.providerRepository.findByContactEmail(contactEmail);
+
+            if (exists) {
+                throw new Error("Este correo de empresa ya se encuentra registrado");
             }
         }
 
