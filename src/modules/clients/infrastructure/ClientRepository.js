@@ -22,7 +22,7 @@ export const clientRepository = {
     },
 
     update: async (id, data) => {
-        return await ClientModel.findByIdAndUpdate(id, data, { new: true }).populate('documentType');
+        return await ClientModel.findByIdAndUpdate(id, data, { returnDocument: "after" }).populate('documentType');
     },
 
     delete: async (id) => {

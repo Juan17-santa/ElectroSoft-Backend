@@ -68,7 +68,7 @@ class ProductRepositoryMongo {
     }
 
     async update(id, productData) {
-        return await productModel.findByIdAndUpdate(id, productData, { new: true }).populate("categoryId", "name description status");
+        return await productModel.findByIdAndUpdate(id, productData, { returnDocument: "after" }).populate("categoryId", "name description status");
     }
 
     async delete(id) {
@@ -79,7 +79,7 @@ class ProductRepositoryMongo {
         return await productModel.findByIdAndUpdate(
             id,
             { $inc: { stock: quantity } },
-            { new: true, session }
+            { returnDocument: "after", session }
         );
     }
 

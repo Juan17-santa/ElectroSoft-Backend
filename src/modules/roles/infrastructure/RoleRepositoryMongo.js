@@ -19,7 +19,7 @@ export const roleRepository = {
 
   update: async (id, roleData) => {
     return await RoleModel.findByIdAndUpdate(id, roleData, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
   },

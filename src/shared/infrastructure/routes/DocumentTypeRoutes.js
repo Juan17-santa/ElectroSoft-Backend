@@ -4,10 +4,11 @@
  */
 
 import { Router } from "express";
-import { getDocumentTypes } from "../controllers/DocumentTypeController.js";
+import { getDocumentTypeById, getDocumentTypes } from "../controllers/DocumentTypeController.js";
 
 const router = Router();
 
 router.get("/", getDocumentTypes);
+router.get("/:id", getDocumentTypeById)
 
 export default router;

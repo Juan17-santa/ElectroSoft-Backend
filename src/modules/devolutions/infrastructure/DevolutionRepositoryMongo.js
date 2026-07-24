@@ -19,7 +19,7 @@ export default class DevolutionRepositoryMongo {
 
     async update(id, data, session = null) {
         return await devolutionModel.findByIdAndUpdate(id, data, {
-            new: true,
+            returnDocument: "after",
             session,
             runValidators: true,
         });

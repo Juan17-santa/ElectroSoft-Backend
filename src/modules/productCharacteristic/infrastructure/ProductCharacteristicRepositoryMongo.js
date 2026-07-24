@@ -27,7 +27,7 @@ class ProductCharacteristicRepositoryMongo {
     }
 
     async update(id, characteristicData) {
-        return await ProductCharacteristicModel.findByIdAndUpdate(id, characteristicData, { new: true });
+        return await ProductCharacteristicModel.findByIdAndUpdate(id, characteristicData, { returnDocument: "after" });
     }
 
     async delete(id) {
