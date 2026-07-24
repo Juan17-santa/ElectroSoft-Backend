@@ -49,6 +49,7 @@ export const createShopping = async (req, res) => {
                 purchasePrice: product.purchasePrice,
                 salePrice: product.salePrice,
                 useSuggestedPrice: product.useSuggestedPrice ?? false,
+                newProduct: product.newProduct ?? null,
             })),
         };
 
