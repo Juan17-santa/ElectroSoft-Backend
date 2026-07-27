@@ -18,6 +18,11 @@
  * - Las categorías asociadas deben ser un arreglo.
  */
 
+function capitalizeWords(str) {
+    if (!str) return "";
+    return str.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
 export default class ProviderEntity {
     constructor({
         id,
@@ -183,8 +188,8 @@ export default class ProviderEntity {
         this.providerType = providerType;
         this.documentType = documentType;
         this.document = document.trim();
-        this.providerName = providerName.trim();
-        this.contactName = contactName.trim();
+        this.providerName = capitalizeWords(providerName);
+        this.contactName = capitalizeWords(contactName);
         this.providerPhone = providerPhone.trim();
         this.providerEmail = providerEmail.trim().toLowerCase();
         this.contactEmail = contactEmail ? contactEmail.trim().toLowerCase() : null;

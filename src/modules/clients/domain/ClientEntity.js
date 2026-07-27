@@ -1,3 +1,8 @@
+function capitalizeWords(str) {
+    if (!str) return "";
+    return str.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
 export default class Client {
     constructor({ id, documentType, documentNumber, firstName, lastName, email, phone, createdAt }) {
 
@@ -92,8 +97,8 @@ export default class Client {
 
         // ASIGNACIÓN DE VALORES
         this.id = id;
-        this.firstName = firstName.trim();
-        this.lastName = lastName.trim();
+        this.firstName = capitalizeWords(firstName);
+        this.lastName = capitalizeWords(lastName);
         this.email = email.trim().toLowerCase();
         this.phone = phone.trim();
         this.documentType = documentType;

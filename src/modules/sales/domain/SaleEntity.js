@@ -16,6 +16,8 @@ export default class SaleEntity {
         clienteId,
         productos,
         total = 0,
+        subtotal = 0,
+        iva = 0,
         estado = "ACTIVA",
         impactApplied = false,
         fechaVenta,
@@ -24,6 +26,10 @@ export default class SaleEntity {
         tipoVenta = "Contado",
         diasPlazo = null,
         observaciones = "",
+        montoPagado = 0,
+        montoPorPagar = 0,
+        montoCredito = 0,
+        montoContado = 0,
     }) {
         // VALIDACIÓN: NÚMERO DE FACTURA
         if (!numeroFactura || !String(numeroFactura).trim()) {
@@ -70,6 +76,8 @@ export default class SaleEntity {
             precioUnitario: Number(producto.precioUnitario),
         }));
         this.total = Number(total);
+        this.subtotal = Number(subtotal);
+        this.iva = Number(iva);
         this.estado = estado;
         this.impactApplied = impactApplied;
         this.fechaVenta = fechaVenta;
@@ -78,13 +86,36 @@ export default class SaleEntity {
         this.tipoVenta = tipoVenta || "Contado";
         this.diasPlazo = diasPlazo;
         this.observaciones = observaciones || "";
+        this.montoPagado = Number(montoPagado || 0);
+        this.montoPorPagar = Number(montoPorPagar || 0);
+        this.montoCredito = Number(montoCredito || 0);
+        this.montoContado = Number(montoContado || 0);
     }
 
     calculateTotal() {
-        this.total = this.productos.reduce(
+        this.subtotal = this.productos.reduce(
             (acc, producto) => acc + producto.cantidad * producto.precioUnitario,
             0,
         );
+        this.iva = this.subtotal * 0.19;
+        this.total = this.subtotal + this.iva;
+
+        if (this.tipoVenta === "Contado") {
+            this.montoPagado = this.total;
+            this.montoPorPagar = 0;
+            this.montoContado = this.total;
+            this.montoCredito = 0;
+        } else if (this.tipoVenta === "Credito" || this.tipoVenta === "Crédito") {
+            this.montoPagado = 0;
+            this.montoPorPagar = this.total;
+            this.montoContado = 0;
+            this.montoCredito = this.total;
+        } else if (this.tipoVenta === "Mixto") {
+            this.montoCredito = Number(this.montoCredito || 0);
+            this.montoContado = Math.max(0, this.total - this.montoCredito);
+            this.montoPagado = this.montoContado;
+            this.montoPorPagar = this.montoCredito;
+        }
 
         return this.total;
     }

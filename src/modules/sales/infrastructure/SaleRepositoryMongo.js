@@ -26,7 +26,7 @@ export default class SaleRepositoryMongo {
         return await saleModel
             .findById(id)
             .populate("clienteId", "firstName lastName documentNumber email phone")
-            .populate("productos.productoId", "name serial price")
+            .populate("productos.productoId", "name serial price garantia")
             .session(session);
     }
 
@@ -48,7 +48,7 @@ export default class SaleRepositoryMongo {
         const sales = await saleModel
             .find()
             .populate("clienteId", "firstName lastName documentNumber email phone")
-            .populate("productos.productoId", "name serial price")
+            .populate("productos.productoId", "name serial price garantia")
             .sort({ fechaCreacion: -1 })
             .lean();
 
@@ -69,11 +69,20 @@ export default class SaleRepositoryMongo {
         // Enriquecer ventas con montoPagado y montoPorPagar
         return sales.map(sale => {
             const total = sale.total || 0;
-            const montoPagado = paymentsBySale[sale._id.toString()] || 0;
+            const abonos = paymentsBySale[sale._id.toString()] || 0;
+            let pagadoCalc = 0;
+            if (sale.tipoVenta === 'Contado') {
+                pagadoCalc = total;
+            } else {
+                const pagoInicial = (sale.tipoVenta === 'Mixto') ? ((sale.montoContado != null) ? sale.montoContado : ((sale.montoCredito != null && sale.montoCredito > 0) ? Math.max(0, total - sale.montoCredito) : 0)) : 0;
+                pagadoCalc = abonos < pagoInicial ? pagoInicial + abonos : abonos;
+            }
+            const porPagarCalc = sale.tipoVenta === 'Contado' ? 0 : Math.max(0, total - pagadoCalc);
+
             return {
                 ...sale,
-                montoPagado: sale.tipoVenta === 'Contado' ? total : montoPagado,
-                montoPorPagar: sale.tipoVenta === 'Contado' ? 0 : Math.max(0, total - montoPagado)
+                montoPagado: pagadoCalc,
+                montoPorPagar: porPagarCalc
             };
         });
     }
