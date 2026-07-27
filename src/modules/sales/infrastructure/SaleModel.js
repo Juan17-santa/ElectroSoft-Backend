@@ -64,6 +64,32 @@ const saleSchema = new mongoose.Schema({
         required: true,
         default: 0,
     },
+    subtotal: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+    iva: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+    montoPagado: {
+        type: Number,
+        default: 0,
+    },
+    montoPorPagar: {
+        type: Number,
+        default: 0,
+    },
+    montoCredito: {
+        type: Number,
+        default: 0,
+    },
+    montoContado: {
+        type: Number,
+        default: 0,
+    },
     estado: {
         type: String,
         required: true,
@@ -92,7 +118,7 @@ const saleSchema = new mongoose.Schema({
     tipoVenta: {
         type: String,
         default: "Contado",
-        enum: ["Contado", "Crédito", "Credito"],
+        enum: ["Contado", "Crédito", "Credito", "Mixto"],
     },
     diasPlazo: {
         type: Number,
