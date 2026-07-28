@@ -30,6 +30,7 @@ import ProviderRepositoryMongo from "./ProviderRepositoryMongo.js";
 import DocumentTypeRepositoryMongo from "../../../shared/infrastructure/repositories/DocumentTypeRepositoryMongo.js"
 import ProductCategoryRepositoryMongo from "../../productCategory/infrastructure/ProductCategoryRepositoryMongo.js"
 import ShoppingRepositoryMongo from "../../shopping/infrastructure/ShoppingRepositoryMongo.js";
+import CheckProviderUniqueFieldsUseCase from "../application/CheckProviderUniqueFieldsUseCase.js";
 
 const shoppingRepository = new ShoppingRepositoryMongo();
 const providerRepository = new ProviderRepositoryMongo();
@@ -45,6 +46,18 @@ export const createProvider = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 }
+
+export const checkProviderUnique = async (req, res) => {
+    try {
+        const useCase = new CheckProviderUniqueFieldsUseCase(providerRepository);
+        const result = await useCase.execute(req.body);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({
+            error: error.message
+        });
+    }
+};
 
 export const getProviders = async (req, res) => {
     try {

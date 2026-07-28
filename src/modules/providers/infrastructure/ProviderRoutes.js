@@ -13,12 +13,13 @@
  */
 
 import { Router } from "express";
-import { changeStatusProvider, createProvider, deleteProvider, getProviders, getProviderById, updateProvider } from "./ProviderController.js";
+import { changeStatusProvider, createProvider, deleteProvider, getProviders, getProviderById, updateProvider, checkProviderUnique } from "./ProviderController.js";
 
 
 const router = Router();
 
 router.post("/", createProvider)
+router.post("/check-unique", checkProviderUnique);
 router.get("/", getProviders)
 router.get("/:id", getProviderById)
 router.put("/:id", updateProvider)
