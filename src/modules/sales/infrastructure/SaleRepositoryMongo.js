@@ -26,7 +26,7 @@ export default class SaleRepositoryMongo {
         return await saleModel
             .findById(id)
             .populate("clienteId", "firstName lastName documentNumber email phone")
-            .populate("productos.productoId", "name serial price garantia")
+            .populate("productos.productoId", "name serial price warranty")
             .session(session);
     }
 
@@ -48,7 +48,7 @@ export default class SaleRepositoryMongo {
         const sales = await saleModel
             .find()
             .populate("clienteId", "firstName lastName documentNumber email phone")
-            .populate("productos.productoId", "name serial price garantia")
+            .populate("productos.productoId", "name serial price warranty")
             .sort({ fechaCreacion: -1 })
             .lean();
 
