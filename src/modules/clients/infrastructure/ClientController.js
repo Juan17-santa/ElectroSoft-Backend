@@ -101,6 +101,21 @@ export const updateCupo = async (req, res) => {
 
         const { cupoTotal, cupoActivo, estado } = req.body;
 
+        if (cupoTotal !== undefined) {
+            const { SaleModel } = await import('../../sales/infrastructure/SaleModel.js');
+            const pendingSales = await SaleModel.find({
+                clienteId: id,
+                estado: { $nin: ['Anulado', 'ANULADA', 'Anulada'] },
+                montoPorPagar: { $gt: 0 }
+            });
+            if (pendingSales && pendingSales.length > 0) {
+                const totalDeuda = pendingSales.reduce((acc, s) => acc + (Number(s.montoPorPagar) || 0), 0);
+                return res.status(400).json({
+                    error: `No se puede modificar el cupo hasta que el cliente libere su deuda actual (Saldo pendiente: $${totalDeuda.toLocaleString('es-CO')}).`
+                });
+            }
+        }
+
         const updateData = {};
         if (cupoTotal !== undefined) updateData.cupoTotal = Number(cupoTotal);
         if (cupoActivo !== undefined) updateData.cupoActivo = Boolean(cupoActivo);
