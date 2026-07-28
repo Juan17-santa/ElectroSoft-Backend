@@ -58,4 +58,18 @@ export const userRepository = {
   findByRole: async (roleId) => {
     return await UserModel.find({ role: roleId }).select("fullName email");
   },
+
+  findByEmailExcluding: async (email, excludeId) => {
+    const query = { email: email.toLowerCase() };
+    if (excludeId) query._id = { $ne: excludeId };
+    return await UserModel.findOne(query).select("_id");
+  },
+
+  findByDocumentExcluding: async (documentNumber, excludeId) => {
+    const query = { documentNumber };
+    if (excludeId) query._id = { $ne: excludeId };
+    return await UserModel.findOne(query).select("_id");
+  },
+
 };
+
