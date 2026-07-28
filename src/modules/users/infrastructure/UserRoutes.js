@@ -6,7 +6,12 @@ import { requirePermission } from "../../../infrastructure/middlewares/requirePe
 const router = Router();
 
 router.get("/", requireAuth, requirePermission("usuarios:ver"), UserController.getAll);
+
+router.get("/check-email", requireAuth, UserController.checkEmail);
+router.get("/check-document", requireAuth, UserController.checkDocument);
+
 router.get("/:id", requireAuth, requirePermission("usuarios:ver"), UserController.getById);
+
 router.post("/", requireAuth, requirePermission("usuarios:crear"), UserController.create);
 router.put("/:id", requireAuth, requirePermission("usuarios:editar"), UserController.update);
 router.delete("/:id", requireAuth, requirePermission("usuarios:eliminar"), UserController.delete);

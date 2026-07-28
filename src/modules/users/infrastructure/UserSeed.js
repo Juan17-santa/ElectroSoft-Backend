@@ -27,5 +27,5 @@ export const seedAdminUser = async () => {
     isActive: true,
   });
 
-  console.log("✅ Usuario administrador sembrado correctamente");
+  console.log("Usuario administrador sembrado correctamente");
 };
