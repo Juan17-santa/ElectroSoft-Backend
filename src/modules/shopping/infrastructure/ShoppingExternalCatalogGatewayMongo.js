@@ -46,6 +46,27 @@ export default class ShoppingExternalCatalogGatewayMongo {
         return getUpdatedDocument(result);
     }
 
+    async createProduct(productData, session = null) {
+        const doc = {
+            name: productData.name,
+            categoryId: toObjectId(productData.categoryId),
+            price: Number(productData.price) || 0,
+            stock: Number(productData.stock) || 0,
+            typeStock: productData.typeStock || "unidad",
+            serial: productData.serial || "",
+            warranty: productData.warranty || "",
+            characteristics: (productData.characteristics || []).map((c) => ({
+                name: c.name,
+                unit: c.unit || "-",
+                value: c.value || "",
+                visible: c.visible !== false,
+            })),
+            status: true,
+        };
+        const result = await productModel.collection.insertOne(doc, { session });
+        return { ...doc, _id: result.insertedId };
+    }
+
     async revertPurchaseEntry(id, { quantity, salePrice, useSuggestedPrice, previousPrice = null, previousCostoPromedio = null }, session = null) {
         const objectId = toObjectId(id);
 

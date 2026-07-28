@@ -60,6 +60,10 @@ export default class CreateShoppingUseCase {
                 throw new Error("El numero de factura ya esta en uso en una compra activa");
             }
 
+            // Crear productos nuevos en BD antes de construir la entidad.
+            // Esto reemplaza los IDs temporales por IDs reales de MongoDB.
+            await this.resolveNewProducts(shoppingData, session);
+
             // Crea la entidad y ejecuta validaciones de negocio.
             const shopping = new ShoppingEntity({
                 ...shoppingData,
@@ -183,6 +187,34 @@ export default class CreateShoppingUseCase {
             }
 
             productsById.set(String(updatedProduct._id), updatedProduct);
+        }
+    }
+
+    async resolveNewProducts(shoppingData, session) {
+        for (const product of shoppingData.products) {
+            if (!product.newProduct) continue;
+
+            const newProductData = product.newProduct;
+            if (!newProductData.name || !newProductData.categoryId) {
+                throw new Error("New products must have a name and categoryId");
+            }
+
+            const created = await this.externalCatalogGateway.createProduct(
+                {
+                    name: newProductData.name,
+                    categoryId: newProductData.categoryId,
+                    serial: newProductData.serial || "",
+                    warranty: newProductData.warranty || "",
+                    typeStock: newProductData.typeStock || "unidad",
+                    characteristics: newProductData.characteristics || [],
+                    price: 0,
+                    stock: 0,
+                },
+                session,
+            );
+
+            product.productId = String(created._id);
+            delete product.newProduct;
         }
     }
 }
