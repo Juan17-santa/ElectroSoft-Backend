@@ -1,4 +1,10 @@
 import { DEVOLUTION_SPECIAL_STATES, DEVOLUTION_STATES } from "../domain/DevolutionEntity.js";
+import {
+    applyInventoryImpact,
+    isFinalResolutionState,
+    recalculateSaleReturnState,
+    validateReturnQuantities,
+} from "./DevolutionInventoryService.js";
 
 const LOCKED_FIELDS = new Set(["saleId", "productos", "fechaCreacion", "_id", "id"]);
 const PRODUCT_MUTABLE_FIELDS = [
@@ -11,13 +17,15 @@ const PRODUCT_MUTABLE_FIELDS = [
     "garantiaProveedor",
     "descripcion",
     "observaciones",
+    "montoReembolso",
 ];
 
 export default class UpdateDevolutionUseCase {
-    constructor(devolutionRepository, transactionManager, productRepository) {
+    constructor(devolutionRepository, transactionManager, productRepository, saleRepository) {
         this.devolutionRepository = devolutionRepository;
         this.transactionManager = transactionManager;
         this.productRepository = productRepository;
+        this.saleRepository = saleRepository;
     }
 
     async execute(id, data) {
@@ -29,6 +37,9 @@ export default class UpdateDevolutionUseCase {
             const devolution = await this.devolutionRepository.findById(id, session);
             if (!devolution) throw new Error("Devolucion no encontrada");
             if (devolution.anulada) throw new Error("No se puede actualizar una devolucion anulada");
+            if (isFinalResolutionState(devolution.estadoResolucion)) {
+                throw new Error("No se puede actualizar una devolucion en estado final");
+            }
 
             const updateData = {};
             Object.entries(data ?? {}).forEach(([key, value]) => {
@@ -54,6 +65,22 @@ export default class UpdateDevolutionUseCase {
             const now = new Date();
             updateData.actualizadoEn = now;
 
+            const targetProducts = updateData.productos || devolution.productos;
+            const sale = await this.saleRepository.findById(devolution.saleId, session);
+            if (!sale) throw new Error("Venta no encontrada");
+            if (sale.estado === "ANULADA" || sale.estado === "Anulado") {
+                throw new Error("No se puede actualizar una devolucion de una venta anulada");
+            }
+
+            await validateReturnQuantities({
+                sale,
+                devolutionRepository: this.devolutionRepository,
+                saleId: devolution.saleId,
+                productos: targetProducts,
+                session,
+                excludeDevolutionId: id,
+            });
+
             if (
                 updateData.estadoResolucion &&
                 updateData.estadoResolucion !== devolution.estadoResolucion
@@ -71,34 +98,20 @@ export default class UpdateDevolutionUseCase {
                 ];
             }
 
-            // Aplicar logica de stock si cambia a RESUELTO y no se ha aplicado antes.
-            // El estado previo valida el flag para cubrir devoluciones antiguas creadas
-            // con impactApplied=true sin haber impactado inventario.
-            const stockImpactAlreadyApplied =
-                devolution.estadoResolucion === "RESUELTO" && devolution.impactApplied;
-
-            if (updateData.estadoResolucion === "RESUELTO" && !stockImpactAlreadyApplied) {
-                const productosAProcesar = updateData.productos || devolution.productos;
-                for (const prod of productosAProcesar) {
-                    const condicion = prod.condicionProducto;
-                    const gestion = prod.gestion;
-
-                    if (gestion === "REEMBOLSO_TOTAL" || gestion === "REEMBOLSO_PARCIAL" || gestion === "OTRO_PRODUCTO") {
-                        if (condicion === "BUEN_ESTADO") {
-                            const updatedProduct = await this.productRepository.updateStock(prod.productoId, prod.cantidad, session);
-                            if (!updatedProduct) throw new Error(`Producto no encontrado: ${prod.productoId}`);
-                        }
-                    } else if (gestion === "MISMO_PRODUCTO") {
-                        if (condicion === "MAL_ESTADO" || condicion === "NO_FUNCIONAL") {
-                            const updatedProduct = await this.productRepository.updateStock(prod.productoId, -prod.cantidad, session);
-                            if (!updatedProduct) throw new Error(`Producto no encontrado: ${prod.productoId}`);
-                        }
-                    }
-                }
+            const targetState = updateData.estadoResolucion ?? devolution.estadoResolucion;
+            if (targetState === "RESUELTO" && !devolution.impactApplied) {
+                await applyInventoryImpact(this.productRepository, targetProducts, session);
                 updateData.impactApplied = true;
+                updateData.confirmadaEn = now;
             }
 
             const updatedDevolution = await this.devolutionRepository.update(id, updateData, session);
+            await recalculateSaleReturnState({
+                saleRepository: this.saleRepository,
+                devolutionRepository: this.devolutionRepository,
+                saleId: devolution.saleId,
+                session,
+            });
 
             await session.commitTransaction();
             return updatedDevolution;

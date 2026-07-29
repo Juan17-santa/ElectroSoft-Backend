@@ -76,10 +76,16 @@ function validateCancellationWindow(sale, now) {
 }
 
 export default class CancelSaleUseCase {
-    constructor(saleRepository, transactionManager, externalCatalogGateway = null) {
+    constructor(
+        saleRepository,
+        transactionManager,
+        externalCatalogGateway = null,
+        devolutionRepository = null,
+    ) {
         this.saleRepository = saleRepository;
         this.transactionManager = transactionManager;
         this.externalCatalogGateway = externalCatalogGateway;
+        this.devolutionRepository = devolutionRepository;
     }
 
     // Solo valida si se puede anular, sin modificar datos
@@ -94,6 +100,7 @@ export default class CancelSaleUseCase {
             throw new Error("Solo se pueden anular ventas activas");
         }
 
+        await this.ensureSaleHasNoDevolutions(id);
         validateCancellationWindow(sale, new Date());
 
         return {
@@ -117,6 +124,8 @@ export default class CancelSaleUseCase {
             if (sale.estado !== "ACTIVA") {
                 throw new Error("Solo se pueden anular ventas activas");
             }
+
+            await this.ensureSaleHasNoDevolutions(id, session);
 
             const now = new Date();
             validateCancellationWindow(sale, now);
@@ -159,6 +168,23 @@ export default class CancelSaleUseCase {
             throw error;
         } finally {
             await session.endSession();
+        }
+    }
+
+    async ensureSaleHasNoDevolutions(id, session = null) {
+        if (!this.devolutionRepository) return;
+
+        const devolutions = await this.devolutionRepository.findBySaleId(id, {
+            includeAnuladas: false,
+            session,
+        });
+
+        const hasActiveDevolutions = devolutions.some(
+            (devolution) => !devolution.anulada && devolution.estadoResolucion !== "Anulada",
+        );
+
+        if (hasActiveDevolutions) {
+            throw new Error("No se puede anular una venta que tiene devoluciones registradas");
         }
     }
 }

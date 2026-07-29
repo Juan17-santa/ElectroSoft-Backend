@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
     anularDevolution,
     confirmDevolution,
+    createBatchDevolutions,
     createDevolution,
     getDevolutionById,
     getDevolutions,
@@ -12,6 +13,7 @@ import {
 const router = Router();
 
 router.post("/", createDevolution);
+router.post("/batch", createBatchDevolutions);
 router.patch("/:id", updateDevolution);
 router.patch("/:id/anular", anularDevolution);
 router.patch("/:id/confirm", confirmDevolution);

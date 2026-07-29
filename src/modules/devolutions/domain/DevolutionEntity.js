@@ -63,6 +63,10 @@ export default class DevolutionEntity {
                 throw new Error(`La cantidad debe ser mayor a 0 en el producto ${index + 1}`);
             }
 
+            if (!Number.isInteger(cantidad)) {
+                throw new Error(`La cantidad debe ser un numero entero en el producto ${index + 1}`);
+            }
+
             if (producto.motivo && !DEVOLUTION_PRODUCT_REASONS.includes(producto.motivo)) {
                 throw new Error(`El motivo no es valido en el producto ${index + 1}`);
             }
@@ -86,6 +90,8 @@ export default class DevolutionEntity {
                 producto.garantiaProveedor === undefined ? null : producto.garantiaProveedor,
             descripcion: String(producto.descripcion).trim(),
             observaciones: producto.observaciones ?? "",
+            montoReembolso:
+                producto.montoReembolso === undefined ? null : Number(producto.montoReembolso),
         }));
         this.fechaDevolucion = normalizeDateOnly(fechaDevolucion);
         this.estadoResolucion = estadoResolucion;

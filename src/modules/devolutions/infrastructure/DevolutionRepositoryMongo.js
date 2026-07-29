@@ -10,11 +10,11 @@ export default class DevolutionRepositoryMongo {
         return await devolutionModel.findById(id).session(session);
     }
 
-    async findBySaleId(saleId, { includeAnuladas = true } = {}) {
+    async findBySaleId(saleId, { includeAnuladas = true, session = null } = {}) {
         const filter = { saleId: String(saleId) };
         if (!includeAnuladas) filter.anulada = { $ne: true };
 
-        return await devolutionModel.find(filter).sort({ fechaCreacion: -1 });
+        return await devolutionModel.find(filter).sort({ fechaCreacion: -1 }).session(session);
     }
 
     async update(id, data, session = null) {

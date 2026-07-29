@@ -1,8 +1,14 @@
+import {
+    applyInventoryImpact,
+    recalculateSaleReturnState,
+} from "./DevolutionInventoryService.js";
+
 export default class AnularDevolutionUseCase {
-    constructor(devolutionRepository, transactionManager, productRepository) {
+    constructor(devolutionRepository, transactionManager, productRepository, saleRepository) {
         this.devolutionRepository = devolutionRepository;
         this.transactionManager = transactionManager;
         this.productRepository = productRepository;
+        this.saleRepository = saleRepository;
     }
 
     async execute(id) {
@@ -32,25 +38,16 @@ export default class AnularDevolutionUseCase {
                 session,
             );
 
-            // Revertir lógica de stock si la devolución estaba en estado RESUELTO y el impacto fue aplicado
-            if (devolution.estadoResolucion === "RESUELTO" && devolution.impactApplied) {
-                for (const prod of devolution.productos) {
-                    const condicion = prod.condicionProducto;
-                    const gestion = prod.gestion;
-
-                    if (gestion === "REEMBOLSO_TOTAL" || gestion === "REEMBOLSO_PARCIAL" || gestion === "OTRO_PRODUCTO") {
-                        if (condicion === "BUEN_ESTADO") {
-                            const updatedProduct = await this.productRepository.updateStock(prod.productoId, -prod.cantidad, session);
-                            if (!updatedProduct) throw new Error(`Producto no encontrado: ${prod.productoId}`);
-                        }
-                    } else if (gestion === "MISMO_PRODUCTO") {
-                        if (condicion === "MAL_ESTADO" || condicion === "NO_FUNCIONAL") {
-                            const updatedProduct = await this.productRepository.updateStock(prod.productoId, prod.cantidad, session);
-                            if (!updatedProduct) throw new Error(`Producto no encontrado: ${prod.productoId}`);
-                        }
-                    }
-                }
+            if (devolution.impactApplied) {
+                await applyInventoryImpact(this.productRepository, devolution.productos, session, -1);
             }
+
+            await recalculateSaleReturnState({
+                saleRepository: this.saleRepository,
+                devolutionRepository: this.devolutionRepository,
+                saleId: devolution.saleId,
+                session,
+            });
 
             await session.commitTransaction();
             return updatedDevolution;
