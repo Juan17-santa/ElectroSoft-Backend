@@ -11,11 +11,11 @@ import ToggleUserStatusUseCase from "../application/ToggleUserStatusUseCase.js";
 const documentTypeRepository = new DocumentTypeRepositoryMongo();
 const toggleUserStatus = new ToggleUserStatusUseCase(userRepository);
 
-const getUsers       = new GetUsersUseCase(userRepository);
-const getUserById    = new GetUserByIdUseCase(userRepository);
-const createUser     = new CreateUserUseCase(userRepository, roleRepository, documentTypeRepository);
-const updateUser     = new UpdateUserUseCase(userRepository, roleRepository, documentTypeRepository);
-const deleteUser     = new DeleteUserUseCase(userRepository);
+const getUsers = new GetUsersUseCase(userRepository);
+const getUserById = new GetUserByIdUseCase(userRepository);
+const createUser = new CreateUserUseCase(userRepository, roleRepository, documentTypeRepository);
+const updateUser = new UpdateUserUseCase(userRepository, roleRepository, documentTypeRepository);
+const deleteUser = new DeleteUserUseCase(userRepository);
 
 export const UserController = {
   getAll: async (req, res) => {
@@ -44,7 +44,7 @@ export const UserController = {
     } catch (error) {
       const status =
         error.message.includes("ya está registrado") ? 409 :
-        error.message.includes("no existe") ? 404 : 400;
+          error.message.includes("no existe") ? 404 : 400;
       res.status(status).json({ success: false, message: error.message });
     }
   },
@@ -56,7 +56,7 @@ export const UserController = {
     } catch (error) {
       const status =
         error.message === "Usuario no encontrado" ? 404 :
-        error.message.includes("ya está registrado") ? 409 : 400;
+          error.message.includes("ya está registrado") ? 409 : 400;
       res.status(status).json({ success: false, message: error.message });
     }
   },
@@ -70,7 +70,7 @@ export const UserController = {
       res.status(status).json({ success: false, message: error.message });
     }
   },
-  
+
   toggleStatus: async (req, res) => {
     try {
       const result = await toggleUserStatus.execute(req.params.id);
@@ -78,6 +78,26 @@ export const UserController = {
     } catch (error) {
       const status = error.message === "Usuario no encontrado" ? 404 : 400;
       res.status(status).json({ success: false, message: error.message });
+    }
+  },
+
+  checkEmail: async (req, res) => {
+    try {
+      const { email, excludeId } = req.query;
+      const exists = await userRepository.findByEmailExcluding(email, excludeId);
+      res.json({ success: true, exists: !!exists });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  checkDocument: async (req, res) => {
+    try {
+      const { document, excludeId } = req.query;
+      const exists = await userRepository.findByDocumentExcluding(document, excludeId);
+      res.json({ success: true, exists: !!exists });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
     }
   },
 };

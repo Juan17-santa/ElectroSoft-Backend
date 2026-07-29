@@ -28,15 +28,28 @@ export default class ProductEntity {
         if (!categoryId) throw new Error("La categoría es obligatoria");
 
         // VALIDACIÓN: PRECIO
-        if (price === undefined || price === null || price === "") throw new Error("El precio es obligatorio");
-        if (typeof price !== "number" || isNaN(price)) throw new Error("El precio debe ser un número");
-        if (price <= 0) throw new Error("El precio debe ser mayor a 0");
+        const normalizedPrice = Number(price ?? 0);
+        if (price === undefined || price === null || price === "") {
+            this.price = 0;
+        } else {
+            if (typeof price !== "number" && typeof price !== "string") throw new Error("El precio debe ser un número");
+            if (isNaN(normalizedPrice)) throw new Error("El precio debe ser un número");
+            if (normalizedPrice < 0) throw new Error("El precio no puede ser negativo");
+            if (!Number.isInteger(normalizedPrice)) throw new Error("El precio debe ser un número entero");
+            this.price = normalizedPrice;
+        }
 
         // VALIDACIÓN: STOCK
-        if (stock === undefined || stock === null || stock === "") throw new Error("El stock es obligatorio");
-        if (typeof stock !== "number" || isNaN(stock)) throw new Error("El stock debe ser un número");
-        if (stock < 0) throw new Error("El stock no puede ser negativo");
-        if (!Number.isInteger(stock)) throw new Error("El stock debe ser un número entero");
+        const normalizedStock = Number(stock ?? 0);
+        if (stock === undefined || stock === null || stock === "") {
+            this.stock = 0;
+        } else {
+            if (typeof stock !== "number" && typeof stock !== "string") throw new Error("El stock debe ser un número");
+            if (isNaN(normalizedStock)) throw new Error("El stock debe ser un número");
+            if (normalizedStock < 0) throw new Error("El stock no puede ser negativo");
+            if (!Number.isInteger(normalizedStock)) throw new Error("El stock debe ser un número entero");
+            this.stock = normalizedStock;
+        }
 
         // VALIDACIÓN: TIPO DE STOCK
         if (!typeStock) throw new Error("El tipo de stock es obligatorio");
@@ -65,8 +78,6 @@ export default class ProductEntity {
         this.productId = productId;
         this.name = name.trim();
         this.categoryId = categoryId;
-        this.price = price;
-        this.stock = stock;
         this.typeStock = typeStock;
         this.serial = serial.trim();
         this.warranty = warranty;
