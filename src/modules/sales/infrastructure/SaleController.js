@@ -25,10 +25,12 @@ import GetSaleByIdUseCase from "../application/GetSaleByIdUseCase.js";
 import SaleRepositoryMongo from "./SaleRepositoryMongo.js";
 import SaleExternalCatalogGatewayMongo from "./SaleExternalCatalogGatewayMongo.js";
 import SaleTransactionManagerMongo from "./SaleTransactionManagerMongo.js";
+import DevolutionRepositoryMongo from "../../devolutions/infrastructure/DevolutionRepositoryMongo.js";
 
 const saleRepository = new SaleRepositoryMongo();
 const externalCatalogGateway = new SaleExternalCatalogGatewayMongo();
 const transactionManager = new SaleTransactionManagerMongo();
+const devolutionRepository = new DevolutionRepositoryMongo();
 
 // Crea una venta y descuenta el stock de los productos
 export const createSale = async (req, res) => {
@@ -72,6 +74,7 @@ export const cancelSale = async (req, res) => {
             saleRepository,
             transactionManager,
             externalCatalogGateway,
+            devolutionRepository,
         );
         const result = await useCase.execute(id, motivo);
 
@@ -96,6 +99,7 @@ export const getSaleCancellationStatus = async (req, res) => {
             saleRepository,
             transactionManager,
             externalCatalogGateway,
+            devolutionRepository,
         );
         await useCase.validate(id);
 

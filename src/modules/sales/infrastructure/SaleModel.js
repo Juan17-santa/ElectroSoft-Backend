@@ -9,7 +9,7 @@
  * - clienteId: referencia al cliente que realizó la compra.
  * - productos: productos vendidos (subdocumento).
  * - total: total calculado por el caso de uso.
- * - estado: ACTIVA o ANULADA.
+ * - estado: ACTIVA, estados de devolucion o ANULADA.
  * - impactApplied: bandera que indica si el stock fue descontado.
  * - fechaVenta: fecha de la factura (formato DD/MM/YYYY o YYYY-MM-DD).
  * - fechaCreacion: fecha de registro en el sistema.
@@ -94,7 +94,7 @@ const saleSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: "ACTIVA",
-        enum: ["ACTIVA", "Vigente", "ANULADA"],
+        enum: ["ACTIVA", "Vigente", "Finalizado", "Devuelto", "Devolución Parcial", "ANULADA"],
     },
     impactApplied: {
         type: Boolean,

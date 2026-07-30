@@ -1,5 +1,6 @@
 import AnularDevolutionUseCase from "../application/AnularDevolutionUseCase.js";
 import ConfirmDevolutionUseCase from "../application/ConfirmDevolutionUseCase.js";
+import CreateBatchDevolutionUseCase from "../application/CreateBatchDevolutionUseCase.js";
 import CreateDevolutionUseCase from "../application/CreateDevolutionUseCase.js";
 import GetDevolutionByIdUseCase from "../application/GetDevolutionByIdUseCase.js";
 import GetDevolutionsUseCase from "../application/GetDevolutionsUseCase.js";
@@ -7,14 +8,21 @@ import UpdateDevolutionUseCase from "../application/UpdateDevolutionUseCase.js";
 import DevolutionRepositoryMongo from "./DevolutionRepositoryMongo.js";
 import DevolutionTransactionManagerMongo from "./DevolutionTransactionManagerMongo.js";
 import ProductRepositoryMongo from "../../products/infrastructure/ProductRepositoryMongo.js";
+import SaleRepositoryMongo from "../../sales/infrastructure/SaleRepositoryMongo.js";
 
 const devolutionRepository = new DevolutionRepositoryMongo();
 const transactionManager = new DevolutionTransactionManagerMongo();
 const productRepository = new ProductRepositoryMongo();
+const saleRepository = new SaleRepositoryMongo();
 
 export const createDevolution = async (req, res) => {
     try {
-        const useCase = new CreateDevolutionUseCase(devolutionRepository, transactionManager);
+        const useCase = new CreateDevolutionUseCase(
+            devolutionRepository,
+            transactionManager,
+            productRepository,
+            saleRepository,
+        );
         const result = await useCase.execute(req.body);
 
         res.status(201).json({
@@ -26,9 +34,38 @@ export const createDevolution = async (req, res) => {
     }
 };
 
+export const createBatchDevolutions = async (req, res) => {
+    try {
+        const { saleId, devoluciones } = req.body;
+        if (!saleId || !Array.isArray(devoluciones) || devoluciones.length === 0) {
+            return res.status(400).json({ error: "saleId y un arreglo devoluciones son requeridos" });
+        }
+
+        const useCase = new CreateBatchDevolutionUseCase(
+            devolutionRepository,
+            transactionManager,
+            productRepository,
+            saleRepository,
+        );
+        const result = await useCase.execute(saleId, devoluciones);
+
+        res.status(201).json({
+            message: "Devoluciones registradas con exito",
+            data: result,
+        });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
 export const updateDevolution = async (req, res) => {
     try {
-        const useCase = new UpdateDevolutionUseCase(devolutionRepository, transactionManager, productRepository);
+        const useCase = new UpdateDevolutionUseCase(
+            devolutionRepository,
+            transactionManager,
+            productRepository,
+            saleRepository,
+        );
         const result = await useCase.execute(req.params.id, req.body);
 
         res.json({
@@ -42,7 +79,12 @@ export const updateDevolution = async (req, res) => {
 
 export const anularDevolution = async (req, res) => {
     try {
-        const useCase = new AnularDevolutionUseCase(devolutionRepository, transactionManager, productRepository);
+        const useCase = new AnularDevolutionUseCase(
+            devolutionRepository,
+            transactionManager,
+            productRepository,
+            saleRepository,
+        );
         const result = await useCase.execute(req.params.id);
 
         res.json({
@@ -56,7 +98,12 @@ export const anularDevolution = async (req, res) => {
 
 export const confirmDevolution = async (req, res) => {
     try {
-        const useCase = new ConfirmDevolutionUseCase(devolutionRepository, transactionManager);
+        const useCase = new ConfirmDevolutionUseCase(
+            devolutionRepository,
+            transactionManager,
+            productRepository,
+            saleRepository,
+        );
         const result = await useCase.execute(req.params.id);
 
         res.json({

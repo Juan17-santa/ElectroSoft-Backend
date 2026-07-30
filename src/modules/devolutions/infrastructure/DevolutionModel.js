@@ -61,6 +61,11 @@ const devolutionProductSchema = new mongoose.Schema(
             default: "",
             trim: true,
         },
+        montoReembolso: {
+            type: Number,
+            default: null,
+            min: 0,
+        },
     },
     { _id: false },
 );
