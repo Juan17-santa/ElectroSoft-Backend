@@ -47,10 +47,16 @@ export default class CreatePaymentUseCase {
             throw new Error("Solo se pueden registrar pagos en ventas activas o vigentes");
         }
 
-        // Calcular el total ya pagado (suma de todos los pagos anteriores)
+        // Calcular el total ya pagado (suma de todos los pagos anteriores válidos)
         const pagosAnteriores = await this.paymentRepository.findByVentaId(ventaId);
-        const totalPagadoAnterior = pagosAnteriores.reduce(
-            (acc, p) => acc + Number(p.monto),
+        
+        let pagoInicial = 0;
+        if (venta.tipoVenta === "Mixto" || venta.formaPago === "Mixto") {
+            pagoInicial = Number(venta.montoContado) || 0;
+        }
+
+        const totalPagadoAnterior = pagoInicial + pagosAnteriores.reduce(
+            (acc, p) => acc + (String(p.estado).toUpperCase().includes('ANULAD') ? 0 : Number(p.monto)),
             0
         );
 
@@ -64,8 +70,8 @@ export default class CreatePaymentUseCase {
 
         const montoNum = Number(monto);
 
-        // Validar que el monto no supere el saldo
-        if (montoNum > saldoActual) {
+        // Validar que el monto no supere el saldo (Tolerancia de 49 pesos por redondeo)
+        if (montoNum > saldoActual + 49) {
             throw new Error(
                 `El monto (${montoNum}) supera el saldo pendiente de la venta (${saldoActual})`
             );
@@ -73,7 +79,8 @@ export default class CreatePaymentUseCase {
 
         // Calcular nuevos valores
         const nuevoTotalPagado = totalPagadoAnterior + montoNum;
-        const nuevoSaldoPendiente = totalVenta - nuevoTotalPagado;
+        // Evitamos saldos negativos por efecto del redondeo
+        const nuevoSaldoPendiente = Math.max(0, totalVenta - nuevoTotalPagado);
         const nuevoEstado = nuevoSaldoPendiente === 0 ? "PAGADA" : "PENDIENTE";
 
         // Crear entidad con validaciones de dominio
