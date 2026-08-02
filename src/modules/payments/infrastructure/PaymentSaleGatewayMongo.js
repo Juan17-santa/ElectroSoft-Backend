@@ -17,4 +17,8 @@ export default class PaymentSaleGatewayMongo {
             .findById(ventaId)
             .populate("clienteId", "firstName lastName documentNumber");
     }
+
+    async updateSale(ventaId, data) {
+        return await saleModel.findByIdAndUpdate(ventaId, data, { new: true });
+    }
 }

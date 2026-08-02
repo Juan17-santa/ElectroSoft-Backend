@@ -78,7 +78,7 @@ export default class SaleRepositoryMongo {
                 pagadoCalc = total;
             } else {
                 const pagoInicial = (sale.tipoVenta === 'Mixto') ? ((sale.montoContado != null) ? sale.montoContado : ((sale.montoCredito != null && sale.montoCredito > 0) ? Math.max(0, total - sale.montoCredito) : 0)) : 0;
-                pagadoCalc = abonos < pagoInicial ? pagoInicial + abonos : abonos;
+                pagadoCalc = pagoInicial + abonos;
             }
             const porPagarCalc = sale.tipoVenta === 'Contado' ? 0 : Math.max(0, total - pagadoCalc);
 

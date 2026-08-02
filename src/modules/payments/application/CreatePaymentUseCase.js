@@ -95,6 +95,12 @@ export default class CreatePaymentUseCase {
             notas: notas || "",
         });
 
-        return await this.paymentRepository.create(payment);
+        const createdPayment = await this.paymentRepository.create(payment);
+
+        if (nuevoSaldoPendiente === 0) {
+            await this.saleGateway.updateSale(ventaId, { estado: "Finalizado" });
+        }
+
+        return createdPayment;
     }
 }

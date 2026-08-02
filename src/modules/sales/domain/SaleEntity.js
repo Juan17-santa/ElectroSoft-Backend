@@ -93,12 +93,14 @@ export default class SaleEntity {
     }
 
     calculateTotal() {
-        this.subtotal = this.productos.reduce(
-            (acc, producto) => acc + producto.cantidad * producto.precioUnitario,
+        // En este sistema, el precioUnitario de los productos ya incluye el IVA.
+        this.total = this.productos.reduce(
+            (acc, producto) => acc + (producto.cantidad * producto.precioUnitario),
             0,
         );
-        this.iva = this.subtotal * 0.19;
-        this.total = this.subtotal + this.iva;
+        this.subtotal = this.total / 1.19;
+        this.iva = this.total - this.subtotal;
+
 
         if (this.tipoVenta === "Contado") {
             this.montoPagado = this.total;
