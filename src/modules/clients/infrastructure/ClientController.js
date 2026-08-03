@@ -102,8 +102,8 @@ export const updateCupo = async (req, res) => {
         const { cupoTotal, cupoActivo, estado } = req.body;
 
         if (cupoTotal !== undefined) {
-            const { SaleModel } = await import('../../sales/infrastructure/SaleModel.js');
-            const pendingSales = await SaleModel.find({
+            const { saleModel } = await import('../../sales/infrastructure/SaleModel.js');
+            const pendingSales = await saleModel.find({
                 clienteId: id,
                 estado: { $nin: ['Anulado', 'ANULADA', 'Anulada'] },
                 montoPorPagar: { $gt: 0 }
