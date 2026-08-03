@@ -49,6 +49,7 @@ export const createShopping = async (req, res) => {
                 purchasePrice: product.purchasePrice,
                 salePrice: product.salePrice,
                 useSuggestedPrice: product.useSuggestedPrice ?? false,
+                appliedPrice: product.appliedPrice ?? null,
                 newProduct: product.newProduct ?? null,
             })),
         };
@@ -81,13 +82,32 @@ export const cancelShopping = async (req, res) => {
     }
 };
 
-// Lista todas las compras.
+// Lista todas las compras con paginación y búsqueda.
 export const getShopping = async (req, res) => {
     try {
         const useCase = new GetShoppingUseCase(shoppingRepository);
-        const result = await useCase.execute();
+        const { page, limit, search } = req.query;
+        const result = await useCase.execute({ page, limit, search });
 
-        res.json({ data: result });
+        res.json({
+            data: result.items,
+            pagination: {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Verifica si un número de factura está en uso por una compra activa.
+export const checkInvoiceExists = async (req, res) => {
+    try {
+        const exists = await shoppingRepository.checkInvoiceExists(req.params.number);
+        res.json({ exists });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

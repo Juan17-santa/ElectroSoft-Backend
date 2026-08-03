@@ -111,23 +111,17 @@ export default class CancelShoppingUseCase {
                 throw new Error("No se configuro el repositorio de productos para revertir inventario");
             }
 
-            for (const producto of shopping.products) {
-                const updatedProduct = await this.externalCatalogGateway.revertPurchaseEntry(
-                    producto.productId,
-                    {
-                        quantity: producto.quantity,
-                        salePrice: producto.salePrice,
-                        useSuggestedPrice: producto.useSuggestedPrice,
-                        previousPrice: producto.previousPrice ?? null,
-                        previousCostoPromedio: producto.previousCostoPromedio ?? null,
-                    },
-                    session,
-                );
-
-                if (!updatedProduct) {
-                    throw new Error("No se puede anular la compra porque el stock actual de un producto es menor a la cantidad comprada");
-                }
-            }
+            await this.externalCatalogGateway.bulkRevertPurchaseEntries(
+                shopping.products.map((producto) => ({
+                    productId: producto.productId?._id ?? producto.productId,
+                    quantity: producto.quantity,
+                    salePrice: producto.salePrice,
+                    useSuggestedPrice: producto.useSuggestedPrice,
+                    previousPrice: producto.previousPrice ?? null,
+                    previousCostoPromedio: producto.previousCostoPromedio ?? null,
+                })),
+                session,
+            );
 
             const cancellationInfo = {
                 motivo: motivo ?? "Anulada desde backend",
