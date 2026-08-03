@@ -20,8 +20,14 @@ export default class GetPaymentsByVentaUseCase {
 
         const pagos = await this.paymentRepository.findByVentaId(ventaId);
 
-        const totalPagado = pagos.reduce((acc, p) => acc + Number(p.monto), 0);
-        const saldoPendiente = Number(venta.total) - totalPagado;
+        const pagoInicial = (venta.tipoVenta === 'Mixto') ? (Number(venta.montoContado) || 0) : 0;
+        const totalAbonos = pagos
+            .filter(p => p.estado !== "ANULADO")
+            .reduce((acc, p) => acc + Number(p.monto), 0);
+        const totalPagado = pagoInicial + totalAbonos;
+        
+        const baseDeuda = (venta.tipoVenta === 'Mixto') ? (Number(venta.montoCredito) || 0) : Number(venta.total);
+        const saldoPendiente = Math.max(0, baseDeuda - totalAbonos);
 
         return {
             venta: {
