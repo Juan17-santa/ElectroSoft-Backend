@@ -25,7 +25,7 @@ export default class SaleRepositoryMongo {
     async findById(id, session = null) {
         return await saleModel
             .findById(id)
-            .populate("clienteId", "firstName lastName documentNumber email phone")
+            .populate("clienteId", "firstName lastName documentType documentNumber email phone")
             .populate("productos.productoId", "name serial price warranty")
             .session(session);
     }
@@ -50,7 +50,7 @@ export default class SaleRepositoryMongo {
     async findAll() {
         const sales = await saleModel
             .find()
-            .populate("clienteId", "firstName lastName documentNumber email phone")
+            .populate("clienteId", "firstName lastName documentType documentNumber email phone")
             .populate("productos.productoId", "name serial price warranty")
             .sort({ fechaCreacion: -1 })
             .lean();

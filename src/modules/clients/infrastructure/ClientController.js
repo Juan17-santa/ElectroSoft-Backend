@@ -102,14 +102,19 @@ export const updateCupo = async (req, res) => {
         const { cupoTotal, cupoActivo, estado } = req.body;
 
         if (cupoTotal !== undefined) {
-            const { saleModel } = await import('../../sales/infrastructure/SaleModel.js');
-            const pendingSales = await saleModel.find({
-                clienteId: id,
-                estado: { $nin: ['Anulado', 'ANULADA', 'Anulada'] },
-                montoPorPagar: { $gt: 0 }
-            });
-            if (pendingSales && pendingSales.length > 0) {
-                const totalDeuda = pendingSales.reduce((acc, s) => acc + (Number(s.montoPorPagar) || 0), 0);
+            const numCupo = Number(cupoTotal);
+
+            // Regla de negocio: cupo mínimo = $10.000 (monto mínimo de venta a crédito)
+            if (numCupo < 10000) {
+                return res.status(400).json({
+                    error: `El cupo mínimo de crédito es $10.000. Un cupo de $${numCupo.toLocaleString('es-CO')} no permite realizar ninguna venta.`
+                });
+            }
+
+            const { calculateClientDebt } = await import('./ClientDebtHelper.js');
+            const totalDeuda = await calculateClientDebt(id);
+
+            if (totalDeuda > 0) {
                 return res.status(400).json({
                     error: `No se puede modificar el cupo hasta que el cliente libere su deuda actual (Saldo pendiente: $${totalDeuda.toLocaleString('es-CO')}).`
                 });

@@ -81,9 +81,13 @@ export default class CreateOrderUseCase {
                 );
             }
 
-            if (calculatedTotal > clientExists.cupoTotal) {
+            const { calculateClientDebt } = await import('../../clients/infrastructure/ClientDebtHelper.js');
+            const currentDebt = await calculateClientDebt(clientExists._id);
+            const cupoDisponible = clientExists.cupoTotal - currentDebt;
+
+            if (calculatedTotal > cupoDisponible) {
                 throw new Error(
-                    `Cupo insuficiente. El pedido ($${calculatedTotal}) supera el cupo disponible ($${clientExists.cupoTotal}).`
+                    `Cupo insuficiente. El pedido ($${calculatedTotal}) supera el cupo disponible ($${cupoDisponible}). Cupo Total: $${clientExists.cupoTotal}, Deuda Actual: $${currentDebt}.`
                 );
             }
         }

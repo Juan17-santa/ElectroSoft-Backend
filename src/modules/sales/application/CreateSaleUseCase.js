@@ -62,6 +62,34 @@ export default class CreateSaleUseCase {
             // Calcular total
             sale.calculateTotal();
 
+            // Validar cupo si es crédito
+            if (sale.tipoVenta === 'Crédito' || sale.tipoVenta === 'Credito' || sale.tipoVenta === 'Mixto') {
+                const client = await this.externalCatalogGateway.findClientById(sale.clienteId, session);
+                
+                if (!client.cupoActivo) {
+                    throw new Error("El cliente no tiene un cupo de crédito habilitado.");
+                }
+
+                if (!client.cupoTotal || client.cupoTotal <= 0) {
+                    throw new Error("El cliente no tiene cupo de crédito disponible.");
+                }
+
+                let montoCredito = sale.total;
+                if (sale.tipoVenta === 'Mixto') {
+                    montoCredito = Math.max(0, sale.total - (sale.montoContado || 0));
+                }
+
+                const { calculateClientDebt } = await import('../../clients/infrastructure/ClientDebtHelper.js');
+                const currentDebt = await calculateClientDebt(sale.clienteId);
+                const cupoDisponible = client.cupoTotal - currentDebt;
+
+                if (montoCredito > cupoDisponible) {
+                    throw new Error(
+                        `Cupo insuficiente. La venta a crédito ($${montoCredito}) supera el cupo disponible ($${cupoDisponible}). Cupo Total: $${client.cupoTotal}, Deuda Actual: $${currentDebt}.`
+                    );
+                }
+            }
+
             // Guardar la venta
             const createdSale = await this.saleRepository.create(sale, session);
 
