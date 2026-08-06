@@ -76,6 +76,14 @@ class ProductRepositoryMongo {
     }
 
     async updateStock(id, quantity, session) {
+        if (quantity < 0) {
+            // Nunca dejar el stock en negativo (ej. al revertir una devolución anulada)
+            return await productModel.findByIdAndUpdate(
+                id,
+                [{ $set: { stock: { $max: [0, { $add: ["$stock", quantity] }] } } }],
+                { returnDocument: "after", session }
+            );
+        }
         return await productModel.findByIdAndUpdate(
             id,
             { $inc: { stock: quantity } },

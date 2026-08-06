@@ -4,7 +4,11 @@
  * Responsabilidades:
  * - Retornar el historial de abonos de una venta.
  * - Incluir el resumen: totalPagado y saldoPendiente actuales.
+ * - El saldoPendiente se calcula con el calculador canónico de ventas
+ *   (incluye reembolsos de devoluciones RESUELTAS).
  */
+import { getSaleSaldo } from "../../sales/infrastructure/SaleFinancialStateService.js";
+
 export default class GetPaymentsByVentaUseCase {
     constructor(paymentRepository, saleGateway) {
         this.paymentRepository = paymentRepository;
@@ -25,9 +29,8 @@ export default class GetPaymentsByVentaUseCase {
             .filter(p => p.estado !== "ANULADO")
             .reduce((acc, p) => acc + Number(p.monto), 0);
         const totalPagado = pagoInicial + totalAbonos;
-        
-        const baseDeuda = (venta.tipoVenta === 'Mixto') ? (Number(venta.montoCredito) || 0) : Number(venta.total);
-        const saldoPendiente = Math.max(0, baseDeuda - totalAbonos);
+
+        const saldoPendiente = await getSaleSaldo(venta);
 
         return {
             venta: {

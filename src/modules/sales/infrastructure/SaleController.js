@@ -26,11 +26,13 @@ import SaleRepositoryMongo from "./SaleRepositoryMongo.js";
 import SaleExternalCatalogGatewayMongo from "./SaleExternalCatalogGatewayMongo.js";
 import SaleTransactionManagerMongo from "./SaleTransactionManagerMongo.js";
 import DevolutionRepositoryMongo from "../../devolutions/infrastructure/DevolutionRepositoryMongo.js";
+import PaymentRepositoryMongo from "../../payments/infrastructure/PaymentRepositoryMongo.js";
 
 const saleRepository = new SaleRepositoryMongo();
 const externalCatalogGateway = new SaleExternalCatalogGatewayMongo();
 const transactionManager = new SaleTransactionManagerMongo();
 const devolutionRepository = new DevolutionRepositoryMongo();
+const paymentRepository = new PaymentRepositoryMongo();
 
 // Crea una venta y descuenta el stock de los productos
 export const createSale = async (req, res) => {
@@ -75,6 +77,7 @@ export const cancelSale = async (req, res) => {
             transactionManager,
             externalCatalogGateway,
             devolutionRepository,
+            paymentRepository,
         );
         const result = await useCase.execute(id, motivo);
 
@@ -100,6 +103,7 @@ export const getSaleCancellationStatus = async (req, res) => {
             transactionManager,
             externalCatalogGateway,
             devolutionRepository,
+            paymentRepository,
         );
         await useCase.validate(id);
 

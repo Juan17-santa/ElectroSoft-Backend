@@ -37,6 +37,10 @@ const devolutionProductSchema = new mongoose.Schema(
             default: "",
             trim: true,
         },
+        regresarAlInventario: {
+            type: Boolean,
+            default: true,
+        },
         gestion: {
             type: String,
             default: "",

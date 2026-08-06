@@ -1,3 +1,8 @@
+import {
+    computeSaleEstado,
+    getSaleSaldo,
+} from "../../sales/infrastructure/SaleFinancialStateService.js";
+
 const FINAL_RESOLUTION_STATES = new Set(["RESUELTO", "RECHAZADA"]);
 const CANCELLED_RESOLUTION_STATE = "Anulada";
 const CANCELLED_SALE_STATES = new Set(["ANULADA", "Anulado"]);
@@ -12,8 +17,13 @@ function getId(value) {
     return String(value);
 }
 
+// Una devolución RECHAZADA no cuenta: se comporta como si nunca hubiera existido
 function isActiveDevolution(devolution) {
-    return !devolution.anulada && devolution.estadoResolucion !== CANCELLED_RESOLUTION_STATE;
+    return (
+        !devolution.anulada &&
+        devolution.estadoResolucion !== CANCELLED_RESOLUTION_STATE &&
+        devolution.estadoResolucion !== "RECHAZADA"
+    );
 }
 
 function getSaleProductQuantities(sale) {
@@ -44,6 +54,8 @@ export function isFinalResolutionState(state) {
  * - REEMBOLSO_PARCIAL: montoReembolso = valor ingresado, obligatorio, mayor a 0
  *   y nunca superior al total de la linea (cantidad x precioUnitario, IVA incluido).
  * - Otras gestiones: montoReembolso = null.
+ * El reembolso aplica sobre ventas de contado y de crédito: en crédito descuenta
+ * el saldo pendiente (lo recalcula el calculador canónico al persistir).
  * No muta los documentos originales: devuelve un arreglo nuevo.
  */
 export function applyReembolsoRules(sale, productos = []) {
@@ -53,19 +65,10 @@ export function applyReembolsoRules(sale, productos = []) {
         salePrices.set(getId(producto.productoId), Number(producto.precioUnitario ?? 0));
     });
 
-    const tieneSaldoPendiente =
-        Number(sale?.montoPorPagar ?? 0) > 0 && sale?.estado !== "Finalizado";
-
     return productos.map((item, index) => {
         const producto = { ...toPlain(item) };
         const gestion = String(producto.gestion ?? "");
         const esReembolso = gestion === "REEMBOLSO_TOTAL" || gestion === "REEMBOLSO_PARCIAL";
-
-        if (esReembolso && tieneSaldoPendiente) {
-            throw new Error(
-                "No se puede registrar un reembolso en efectivo sobre una venta con saldo pendiente. Aplica el valor como abono al saldo de la venta.",
-            );
-        }
 
         const cantidad = Number(producto.cantidad ?? 0);
         const precioUnitario = salePrices.get(getId(producto.productoId)) ?? 0;
@@ -171,6 +174,11 @@ export async function applyInventoryImpact(productRepository, productos = [], se
 
         if (producto.condicionProducto !== "BUEN_ESTADO") continue;
 
+        if (
+            producto.submotivo === "PRODUCTO_INCOMPLETO" &&
+            producto.regresarAlInventario !== true
+        ) continue;
+
         const updatedProduct = await productRepository.updateStock(
             producto.productoId,
             Number(producto.cantidad) * multiplier,
@@ -183,6 +191,14 @@ export async function applyInventoryImpact(productRepository, productos = [], se
     }
 }
 
+/**
+ * Recalcula el estado y el saldo (montoPorPagar) de la venta tras un cambio en
+ * sus devoluciones, usando el calculador canónico de ventas:
+ * - Con devoluciones contables (no anuladas, no RECHAZADA): "Devuelto" o
+ *   "Devolución Parcial".
+ * - Sin devoluciones contables: "Finalizado" (saldo 0) o "Vigente" (saldo > 0).
+ * - El saldo incluye los reembolsos de devoluciones RESUELTAS activas.
+ */
 export async function recalculateSaleReturnState({
     saleRepository,
     devolutionRepository,
@@ -193,30 +209,12 @@ export async function recalculateSaleReturnState({
     if (!sale) throw new Error("Venta no encontrada");
     if (CANCELLED_SALE_STATES.has(sale.estado)) return sale;
 
-    const soldByProduct = getSaleProductQuantities(sale);
-    const existingDevolutions = await devolutionRepository.findBySaleId(saleId, {
-        includeAnuladas: false,
-        session,
-    });
-    const returnedByProduct = new Map();
+    const [saldo, estado] = await Promise.all([
+        getSaleSaldo(sale, { session }),
+        computeSaleEstado(sale, { session }),
+    ]);
 
-    existingDevolutions
-        .filter(isActiveDevolution)
-        .forEach((devolution) => addProductQuantities(returnedByProduct, devolution.productos));
+    if (sale.estado === estado && Number(sale.montoPorPagar ?? 0) === saldo) return sale;
 
-    const totalSold = [...soldByProduct.values()].reduce((sum, quantity) => sum + quantity, 0);
-    const totalReturned = [...returnedByProduct.values()].reduce((sum, quantity) => sum + quantity, 0);
-
-    const nextState =
-        totalReturned <= 0
-            ? "ACTIVA"
-            : [...soldByProduct.entries()].every(
-                ([productoId, soldQuantity]) => (returnedByProduct.get(productoId) ?? 0) >= soldQuantity,
-            ) && totalReturned >= totalSold
-                ? "Devuelto"
-                : "Devolución Parcial";
-
-    if (sale.estado === nextState) return sale;
-
-    return await saleRepository.update(saleId, { estado: nextState }, session);
+    return await saleRepository.update(saleId, { estado, montoPorPagar: saldo }, session);
 }

@@ -98,7 +98,7 @@ export const cancelPayment = async (req, res) => {
             return res.status(400).json({ error: "ID inválido" });
         }
 
-        const useCase = new CancelPaymentUseCase(paymentRepository);
+        const useCase = new CancelPaymentUseCase(paymentRepository, saleGateway);
         const result = await useCase.execute(id);
 
         res.json({ message: "Pago anulado con éxito", data: result });

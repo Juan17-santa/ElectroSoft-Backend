@@ -2,15 +2,19 @@
  * Caso de uso para anular una venta.
  *
  * Responsabilidades:
- * - Verificar que la venta exista y esté activa.
+ * - Verificar que la venta exista y esté en un estado anulable
+ *   (ACTIVA por compatibilidad, Vigente o Finalizado).
  * - Validar que la anulación esté dentro de la ventana permitida (48 horas desde creación Y desde fechaVenta).
  * - Revertir el stock de los productos vendidos.
+ * - Anular los pagos de la venta en la misma transacción.
  * - Marcar la venta como ANULADA.
  * - Confirmar o revertir la transacción.
  */
 
 const HOURS_LIMIT = 48;
 const MILLISECONDS_PER_HOUR = 1000 * 60 * 60;
+
+const CANCELLABLE_SALE_STATES = ["ACTIVA", "Vigente", "Finalizado"];
 
 function parseSaleDateEndOfDay(fechaVenta) {
     if (!fechaVenta || typeof fechaVenta !== "string") {
@@ -81,11 +85,13 @@ export default class CancelSaleUseCase {
         transactionManager,
         externalCatalogGateway = null,
         devolutionRepository = null,
+        paymentRepository = null,
     ) {
         this.saleRepository = saleRepository;
         this.transactionManager = transactionManager;
         this.externalCatalogGateway = externalCatalogGateway;
         this.devolutionRepository = devolutionRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     // Solo valida si se puede anular, sin modificar datos
@@ -96,8 +102,8 @@ export default class CancelSaleUseCase {
             throw new Error("Venta no encontrada");
         }
 
-        if (sale.estado !== "ACTIVA") {
-            throw new Error("Solo se pueden anular ventas activas");
+        if (!CANCELLABLE_SALE_STATES.includes(sale.estado)) {
+            throw new Error("Solo se pueden anular ventas activas, vigentes o finalizadas");
         }
 
         await this.ensureSaleHasNoDevolutions(id);
@@ -121,8 +127,8 @@ export default class CancelSaleUseCase {
                 throw new Error("Venta no encontrada");
             }
 
-            if (sale.estado !== "ACTIVA") {
-                throw new Error("Solo se pueden anular ventas activas");
+            if (!CANCELLABLE_SALE_STATES.includes(sale.estado)) {
+                throw new Error("Solo se pueden anular ventas activas, vigentes o finalizadas");
             }
 
             await this.ensureSaleHasNoDevolutions(id, session);
@@ -149,6 +155,11 @@ export default class CancelSaleUseCase {
 
             // Decrementar compras del cliente
             await this.externalCatalogGateway.revertSaleFromClient(sale.clienteId, sale.total, session);
+
+            // Anular los pagos de la venta en la misma transacción
+            if (this.paymentRepository) {
+                await this.paymentRepository.cancelBySaleId(id, session);
+            }
 
             const updatedSale = await this.saleRepository.update(
                 id,
@@ -179,8 +190,12 @@ export default class CancelSaleUseCase {
             session,
         });
 
+        // Una devolución RECHAZADA no cuenta: se comporta como si nunca hubiera existido
         const hasActiveDevolutions = devolutions.some(
-            (devolution) => !devolution.anulada && devolution.estadoResolucion !== "Anulada",
+            (devolution) =>
+                !devolution.anulada &&
+                devolution.estadoResolucion !== "Anulada" &&
+                devolution.estadoResolucion !== "RECHAZADA",
         );
 
         if (hasActiveDevolutions) {

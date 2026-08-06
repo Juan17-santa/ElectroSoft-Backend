@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/interfaces/server.js",
     "dev": "node --watch src/interfaces/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "migrate:sales": "node scripts/migrate-sales-financial-state.js",
+    "migrate:sales:dry-run": "node scripts/migrate-sales-financial-state.js --dry-run"
   },
   "keywords": [],
   "author": "",

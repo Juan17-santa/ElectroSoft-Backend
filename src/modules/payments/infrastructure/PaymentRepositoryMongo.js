@@ -6,10 +6,12 @@
  * - Exponer operaciones usadas por los casos de uso.
  *
  * Métodos:
- * - create:         crea un nuevo pago.
- * - findById:       busca un pago por ID (con populate de ventaId).
- * - findByVentaId:  retorna todos los pagos de una venta específica.
- * - findAll:        lista todos los pagos ordenados por fechaPago descendente.
+ * - create:          crea un nuevo pago.
+ * - findById:        busca un pago por ID (con populate de ventaId).
+ * - findByVentaId:   retorna todos los pagos de una venta específica.
+ * - findAll:         lista todos los pagos ordenados por fechaPago descendente.
+ * - cancel:          anula un pago por ID.
+ * - cancelBySaleId:  anula todos los pagos de una venta (usado al anular la venta).
  */
 import { paymentModel } from "./PaymentModel.js";
 
@@ -24,10 +26,11 @@ export default class PaymentRepositoryMongo {
             .populate("ventaId", "numeroFactura total estado clienteId");
     }
 
-    async findByVentaId(ventaId) {
+    async findByVentaId(ventaId, session = null) {
         return await paymentModel
             .find({ ventaId })
-            .sort({ fechaPago: 1 });
+            .sort({ fechaPago: 1 })
+            .session(session);
     }
 
     async findAll() {
@@ -42,6 +45,14 @@ export default class PaymentRepositoryMongo {
             id,
             { $set: { estado: "ANULADO" } },
             { returnDocument: "after" }
+        );
+    }
+
+    async cancelBySaleId(saleId, session = null) {
+        return await paymentModel.updateMany(
+            { ventaId: saleId, estado: { $ne: "ANULADO" } },
+            { $set: { estado: "ANULADO" } },
+            { session }
         );
     }
 }

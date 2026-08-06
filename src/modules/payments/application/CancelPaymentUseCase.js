@@ -4,11 +4,17 @@
  * Responsabilidades:
  * - Verificar que el pago exista y no esté ya anulado.
  * - Cambiar el estado del pago a "ANULADO".
- * - No recalcula saldos: eso lo hace el frontend al leer los pagos activos.
+ * - Recalcular el saldo y el estado de la venta con el calculador canónico.
  */
+import {
+    computeSaleEstado,
+    getSaleSaldo,
+} from "../../sales/infrastructure/SaleFinancialStateService.js";
+
 export default class CancelPaymentUseCase {
-    constructor(paymentRepository) {
+    constructor(paymentRepository, saleGateway = null) {
         this.paymentRepository = paymentRepository;
+        this.saleGateway = saleGateway;
     }
 
     async execute(paymentId) {
@@ -21,6 +27,26 @@ export default class CancelPaymentUseCase {
             throw new Error("Este pago ya fue anulado");
         }
 
-        return await this.paymentRepository.cancel(paymentId);
+        const cancelled = await this.paymentRepository.cancel(paymentId);
+
+        // Recalcular saldo y estado de la venta asociada
+        const ventaId = payment.ventaId?._id ?? payment.ventaId;
+        if (this.saleGateway && ventaId) {
+            const venta = await this.saleGateway.findSaleById(ventaId);
+            if (venta && venta.estado !== "ANULADA" && venta.estado !== "Anulado") {
+                const [nuevoSaldo, nuevoEstadoVenta] = await Promise.all([
+                    getSaleSaldo(venta),
+                    computeSaleEstado(venta),
+                ]);
+
+                const saleUpdate = { montoPorPagar: nuevoSaldo };
+                if (nuevoEstadoVenta !== venta.estado) {
+                    saleUpdate.estado = nuevoEstadoVenta;
+                }
+                await this.saleGateway.updateSale(ventaId, saleUpdate);
+            }
+        }
+
+        return cancelled;
     }
 }

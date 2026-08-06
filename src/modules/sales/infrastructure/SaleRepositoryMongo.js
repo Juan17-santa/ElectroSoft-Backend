@@ -15,6 +15,7 @@
  */
 import mongoose from "mongoose";
 import { saleModel } from "./SaleModel.js";
+import { getRefundsBySaleIds } from "./SaleFinancialStateService.js";
 
 export default class SaleRepositoryMongo {
     async create(data, session) {
@@ -57,10 +58,13 @@ export default class SaleRepositoryMongo {
 
         // Obtener todos los pagos activos
         const paymentModel = mongoose.model("Payment");
-        const allPayments = await paymentModel.find({
-            estado: { $ne: "ANULADO" },
-            ventaId: { $in: sales.map(s => s._id) }
-        });
+        const [allPayments, refundsBySale] = await Promise.all([
+            paymentModel.find({
+                estado: { $ne: "ANULADO" },
+                ventaId: { $in: sales.map(s => s._id) }
+            }),
+            getRefundsBySaleIds(sales.map(s => s._id)),
+        ]);
 
         // Agrupar pagos por venta
         const paymentsBySale = allPayments.reduce((acc, p) => {
@@ -69,10 +73,11 @@ export default class SaleRepositoryMongo {
             return acc;
         }, {});
 
-        // Enriquecer ventas con montoPagado y montoPorPagar
+        // Enriquecer ventas con montoPagado y montoPorPagar (incluye reembolsos RESUELTOS)
         return sales.map(sale => {
             const total = sale.total || 0;
             const abonos = paymentsBySale[sale._id.toString()] || 0;
+            const reembolsos = refundsBySale.get(String(sale._id)) || 0;
             let pagadoCalc = 0;
             if (sale.tipoVenta === 'Contado') {
                 pagadoCalc = total;
@@ -80,7 +85,7 @@ export default class SaleRepositoryMongo {
                 const pagoInicial = (sale.tipoVenta === 'Mixto') ? ((sale.montoContado != null) ? sale.montoContado : ((sale.montoCredito != null && sale.montoCredito > 0) ? Math.max(0, total - sale.montoCredito) : 0)) : 0;
                 pagadoCalc = pagoInicial + abonos;
             }
-            const porPagarCalc = sale.tipoVenta === 'Contado' ? 0 : Math.max(0, total - pagadoCalc);
+            const porPagarCalc = Math.max(0, total - pagadoCalc - reembolsos);
 
             return {
                 ...sale,

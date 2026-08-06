@@ -13,6 +13,7 @@ const PRODUCT_MUTABLE_FIELDS = [
     "motivo",
     "submotivo",
     "condicionProducto",
+    "regresarAlInventario",
     "gestion",
     "responsable",
     "garantiaProveedor",
