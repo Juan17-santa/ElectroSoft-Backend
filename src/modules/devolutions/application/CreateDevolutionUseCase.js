@@ -1,6 +1,7 @@
 import DevolutionEntity from "../domain/DevolutionEntity.js";
 import {
     applyInventoryImpact,
+    applyReembolsoRules,
     recalculateSaleReturnState,
     validateReturnQuantities,
 } from "./DevolutionInventoryService.js";
@@ -46,6 +47,8 @@ export default class CreateDevolutionUseCase {
                 productos: devolution.productos,
                 session,
             });
+
+            devolution.productos = applyReembolsoRules(sale, devolution.productos);
 
             if (devolution.estadoResolucion === "RESUELTO") {
                 await applyInventoryImpact(this.productRepository, devolution.productos, session);

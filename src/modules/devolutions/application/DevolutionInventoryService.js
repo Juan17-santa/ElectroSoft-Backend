@@ -37,6 +37,83 @@ export function isFinalResolutionState(state) {
     return FINAL_RESOLUTION_STATES.has(state);
 }
 
+/**
+ * Reglas de negocio para el monto reembolsado por producto.
+ * - REEMBOLSO_TOTAL: montoReembolso = cantidad x precioUnitario (el precio de la
+ *   venta ya incluye IVA), redondeado a 2 decimales.
+ * - REEMBOLSO_PARCIAL: montoReembolso = valor ingresado, obligatorio, mayor a 0
+ *   y nunca superior al total de la linea (cantidad x precioUnitario, IVA incluido).
+ * - Otras gestiones: montoReembolso = null.
+ * No muta los documentos originales: devuelve un arreglo nuevo.
+ */
+export function applyReembolsoRules(sale, productos = []) {
+    const salePrices = new Map();
+    (sale?.productos ?? []).forEach((item) => {
+        const producto = toPlain(item);
+        salePrices.set(getId(producto.productoId), Number(producto.precioUnitario ?? 0));
+    });
+
+    const tieneSaldoPendiente =
+        Number(sale?.montoPorPagar ?? 0) > 0 && sale?.estado !== "Finalizado";
+
+    return productos.map((item, index) => {
+        const producto = { ...toPlain(item) };
+        const gestion = String(producto.gestion ?? "");
+        const esReembolso = gestion === "REEMBOLSO_TOTAL" || gestion === "REEMBOLSO_PARCIAL";
+
+        if (esReembolso && tieneSaldoPendiente) {
+            throw new Error(
+                "No se puede registrar un reembolso en efectivo sobre una venta con saldo pendiente. Aplica el valor como abono al saldo de la venta.",
+            );
+        }
+
+        const cantidad = Number(producto.cantidad ?? 0);
+        const precioUnitario = salePrices.get(getId(producto.productoId)) ?? 0;
+        const maximo = Math.round(cantidad * precioUnitario * 100) / 100;
+
+        if (gestion === "REEMBOLSO_TOTAL") {
+            if (maximo <= 0) {
+                throw new Error(
+                    `No se puede calcular el reembolso total del producto ${index + 1}: la venta no tiene precio valido`,
+                );
+            }
+            producto.montoReembolso = maximo;
+        } else if (gestion === "REEMBOLSO_PARCIAL") {
+            const monto = Number(producto.montoReembolso);
+            if (!Number.isFinite(monto) || monto <= 0) {
+                throw new Error(
+                    `El montoReembolso es obligatorio y debe ser mayor a 0 para la gestion REEMBOLSO_PARCIAL del producto ${index + 1}`,
+                );
+            }
+            if (monto < 100) {
+                throw new Error(
+                    `El montoReembolso del producto ${index + 1} no puede ser menor a 100`,
+                );
+            }
+            if (monto > 999999999) {
+                throw new Error(
+                    `El montoReembolso del producto ${index + 1} no puede superar 9 digitos`,
+                );
+            }
+            if (maximo <= 0) {
+                throw new Error(
+                    `No se puede validar el reembolso parcial del producto ${index + 1}: la venta no tiene precio valido`,
+                );
+            }
+            if (monto > maximo) {
+                throw new Error(
+                    `El montoReembolso del producto ${index + 1} supera el maximo permitido (${maximo})`,
+                );
+            }
+            producto.montoReembolso = monto;
+        } else {
+            producto.montoReembolso = null;
+        }
+
+        return producto;
+    });
+}
+
 export async function validateReturnQuantities({
     sale,
     devolutionRepository,

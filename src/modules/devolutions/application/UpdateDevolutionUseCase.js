@@ -1,6 +1,7 @@
 import { DEVOLUTION_SPECIAL_STATES, DEVOLUTION_STATES } from "../domain/DevolutionEntity.js";
 import {
     applyInventoryImpact,
+    applyReembolsoRules,
     isFinalResolutionState,
     recalculateSaleReturnState,
     validateReturnQuantities,
@@ -81,6 +82,8 @@ export default class UpdateDevolutionUseCase {
                 excludeDevolutionId: id,
             });
 
+            updateData.productos = applyReembolsoRules(sale, targetProducts);
+
             if (
                 updateData.estadoResolucion &&
                 updateData.estadoResolucion !== devolution.estadoResolucion
@@ -100,7 +103,7 @@ export default class UpdateDevolutionUseCase {
 
             const targetState = updateData.estadoResolucion ?? devolution.estadoResolucion;
             if (targetState === "RESUELTO" && !devolution.impactApplied) {
-                await applyInventoryImpact(this.productRepository, targetProducts, session);
+                await applyInventoryImpact(this.productRepository, updateData.productos, session);
                 updateData.impactApplied = true;
                 updateData.confirmadaEn = now;
             }
