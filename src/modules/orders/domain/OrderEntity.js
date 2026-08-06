@@ -12,7 +12,7 @@
  */
 
 export default class OrderEntity {
-    constructor({ id, documentNumber, client, orderDate, dueDate, products, paymentMethod, subtotal, iva, total, status }) {
+    constructor({ id, documentNumber, client, orderDate, dueDate, products, paymentMethod, requestedCredit = 0, subtotal, iva, total, status }) {
 
         // VALIDACIÓN: NÚMERO DE DOCUMENTO
         if (!documentNumber) {
@@ -38,7 +38,7 @@ export default class OrderEntity {
             throw new Error("La forma de pago es obligatoria");
         }
 
-        const validPaymentMethods = ["Contado", "Credito"];
+        const validPaymentMethods = ["Contado", "Credito", "Mixto"];
 
         if (!validPaymentMethods.includes(paymentMethod)) {
             throw new Error("Forma de pago inválida");
@@ -50,7 +50,7 @@ export default class OrderEntity {
         }
 
         // VALIDACIÓN: ESTADO
-        const validStatus = ["Pendiente", "Anulado"];
+        const validStatus = ["Pendiente", "Anulado", "Mixto"];
 
         if (status && !validStatus.includes(status)) {
             throw new Error("Estado inválido");
@@ -90,6 +90,17 @@ export default class OrderEntity {
             throw new Error("Total inválido");
         }
 
+        // VALIDACIÓN: CRÉDITO SOLICITADO
+        const requestedCreditValue = Number(requestedCredit || 0);
+
+        if (!Number.isFinite(requestedCreditValue) || requestedCreditValue < 0) {
+            throw new Error("El crédito solicitado es inválido.");
+        }
+
+        if (requestedCreditValue > total) {
+            throw new Error("El crédito solicitado no puede superar el total del pedido.");
+        }
+
         this.id = id;
         this.documentNumber = documentNumber;
         this.client = client;
@@ -97,6 +108,7 @@ export default class OrderEntity {
         this.dueDate = dueDate;
         this.products = products;
         this.paymentMethod = paymentMethod;
+        this.requestedCredit = requestedCreditValue;
         this.subtotal = subtotal;
         this.iva = iva;
         this.total = total;
