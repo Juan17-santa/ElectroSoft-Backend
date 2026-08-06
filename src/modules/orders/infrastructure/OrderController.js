@@ -94,7 +94,7 @@ export const confirmOrder = async (req, res) => {
         }
 
         const useCase = new ConfirmOrderUseCase(orderRepository, createSaleUseCase, productRepository, saleRepository);
-        const result = await useCase.execute(id);
+        const result = await useCase.execute(id, req.body);
 
         res.json({ message: "Pedido confirmado, convertido en venta y eliminado de orders.", data: result });
     } catch (error) {

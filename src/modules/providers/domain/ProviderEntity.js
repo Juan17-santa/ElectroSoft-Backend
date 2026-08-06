@@ -82,7 +82,7 @@ export default class ProviderEntity {
         }
 
         // Permite letras, números y algunos símbolos básicos
-        const nameRegex = /^[a-zA-Z0-9\s.,&-]+$/;
+        const nameRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,&-]+$/;
         if (!nameRegex.test(providerName)) {
             throw new Error("El nombre del proveedor contiene caracteres inválidos");
         }
@@ -192,8 +192,8 @@ export default class ProviderEntity {
         this.contactName = capitalizeWords(contactName);
         this.providerPhone = providerPhone.trim();
         this.providerEmail = providerEmail.trim().toLowerCase();
-        this.contactEmail = contactEmail ? contactEmail.trim().toLowerCase() : null;
-        this.contactPhone = contactPhone ? contactPhone.trim() : null;
+        this.contactEmail = contactEmail ? contactEmail.trim().toLowerCase() : undefined;
+        this.contactPhone = contactPhone ? contactPhone.trim() : undefined;
         this.address = address.trim();
         this.categoriesAssociated = categoriesAssociated;
         this.status = status;

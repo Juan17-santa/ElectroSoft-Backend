@@ -16,7 +16,7 @@ export default class ConfirmOrderUseCase {
         this.saleRepository = saleRepository;
     }
 
-    async execute(id) {
+    async execute(id, confirmationData = {}) {
         if (!this.createSaleUseCase) {
             throw new Error("No se configuró el caso de uso de creación de ventas");
         }
@@ -59,6 +59,50 @@ export default class ConfirmOrderUseCase {
             numeroFactura = String(count).padStart(2, '0');
         }
 
+        let tipoVenta;
+        switch (order.paymentMethod) {
+            case "Contado":
+                tipoVenta = "Contado";
+                break;
+            case "Credito":
+                tipoVenta = "Crédito";
+                break;
+            case "Mixto":
+                tipoVenta = "Mixto";
+                break;
+        }
+
+        let diasPlazo = null;
+        let montoCredito = 0;
+
+        if (tipoVenta === "Crédito" || tipoVenta === "Mixto") {
+            if (confirmationData.diasPlazo == null) {
+                throw new Error("Debe indicar el plazo del crédito.");
+            }
+
+            diasPlazo = Number(confirmationData.diasPlazo);
+
+            if (diasPlazo < 0 || diasPlazo > 60) {
+                throw new Error("El plazo debe estar entre 0 y 60 días.");
+            }
+        }
+
+        if (tipoVenta === "Mixto") {
+            if (confirmationData.montoCredito == null) {
+                throw new Error("Debe indicar cuánto crédito utilizará.");
+            }
+
+            montoCredito = Number(confirmationData.montoCredito);
+
+            if (montoCredito <= 0) {
+                throw new Error("El monto de crédito debe ser mayor a cero.");
+            }
+
+            if (montoCredito > order.total) {
+                throw new Error("El monto de crédito no puede superar el total del pedido.");
+            }
+        }
+
         const saleData = {
             numeroFactura,
             clienteId: order.client?._id || order.client,
@@ -67,8 +111,10 @@ export default class ConfirmOrderUseCase {
                 cantidad: item.quantity,
                 precioUnitario: item.price,
             })),
-            tipoVenta: order.paymentMethod === "Credito" ? "Crédito" : "Contado",
-            fechaVenta: order.orderDate ? new Date(order.orderDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+            tipoVenta,
+            fechaVenta: new Date().toISOString().split("T")[0],
+            diasPlazo,
+            montoCredito
         };
 
         try {

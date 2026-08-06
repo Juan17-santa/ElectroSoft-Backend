@@ -29,8 +29,8 @@ const providerSchema = new mongoose.Schema({
     providerPhone: { type: String, required: true, trim: true },
 
     contactName: { type: String, required: true, trim: true },
-    contactEmail: { type: String, unique: true, trim: true, lowercase: true, default: null },
-    contactPhone: { type: String, trim: true, default: null },
+    contactEmail: { type: String, unique: true, sparse: true, trim: true, lowercase: true },
+    contactPhone: { type: String, trim: true },
     address: { type: String, required: true, trim: true },
     
     categoriesAssociated: [{ type: mongoose.Schema.Types.ObjectId, ref: "ProductCategory" }],

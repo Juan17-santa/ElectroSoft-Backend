@@ -44,7 +44,9 @@ const orderSchema = new mongoose.Schema({
         }
     ],
     // FORMA DE PAGO
-    paymentMethod: { type: String, enum: ["Contado", "Credito"], required: true },
+    paymentMethod: { type: String, enum: ["Contado", "Credito", "Mixto"], required: true },
+    // MONTO DE CRÉDITO SOLICITADO
+    requestedCredit: { type: Number, default: 0, min: 0 },
     // SUBTOTAL GENERAL
     subtotal: { type: Number, required: true, min: 0 },
     // IVA GENERAL
