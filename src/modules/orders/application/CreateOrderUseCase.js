@@ -30,7 +30,7 @@ export default class CreateOrderUseCase {
         if (orderDate < minDate) throw new Error("La fecha del pedido no puede ser mayor a 4 días de antigüedad.");
 
         const dueDate = new Date(orderDate);
-        dueDate.setDate(dueDate.getDate() + 15);
+        dueDate.setDate(dueDate.getDate() + 2);
 
         let calculatedTotal = 0;
         const validatedProducts = [];
@@ -68,7 +68,15 @@ export default class CreateOrderUseCase {
         const calculatedIva = Math.round(calculatedTotal * IVA_PERCENTAGE);
         const calculatedSubtotal = calculatedTotal - calculatedIva;
 
-        if (orderData.paymentMethod === "Credito") {
+        const requestedCredit = Number(orderData.requestedCredit || 0);
+
+        if (orderData.paymentMethod === "Contado" && requestedCredit > 0) {
+            throw new Error(
+                "Un pedido de contado no puede tener crédito solicitado."
+            );
+        }
+
+        if (orderData.paymentMethod === "Credito" || orderData.paymentMethod === "Mixto") {
             if (!clientExists.cupoActivo) {
                 throw new Error(
                     "El cliente no tiene un cupo de crédito habilitado."
@@ -80,16 +88,41 @@ export default class CreateOrderUseCase {
                     "El cliente no tiene cupo disponible."
                 );
             }
-
             const { calculateClientDebt } = await import('../../clients/infrastructure/ClientDebtHelper.js');
             const currentDebt = await calculateClientDebt(clientExists._id);
             const cupoDisponible = clientExists.cupoTotal - currentDebt;
 
-            if (calculatedTotal > cupoDisponible) {
-                throw new Error(
-                    `Cupo insuficiente. El pedido ($${calculatedTotal}) supera el cupo disponible ($${cupoDisponible}). Cupo Total: $${clientExists.cupoTotal}, Deuda Actual: $${currentDebt}.`
-                );
+            if (orderData.paymentMethod === "Credito") {
+                if (calculatedTotal > cupoDisponible) {
+                    throw new Error(
+                        `Cupo insuficiente. El pedido ($${calculatedTotal}) supera el cupo disponible ($${cupoDisponible}). Cupo Total: $${clientExists.cupoTotal}, Deuda Actual: $${currentDebt}.`
+                    );
+                }
+            } else {
+                if (requestedCredit <= 0) {
+                    throw new Error(
+                        "Debe indicar cuánto crédito desea utilizar."
+                    );
+                }
+
+                if (requestedCredit > calculatedTotal) {
+                    throw new Error(
+                        "El crédito solicitado no puede superar el total del pedido."
+                    );
+                }
+
+                if (requestedCredit > cupoDisponible) {
+                    throw new Error(
+                        `El crédito solicitado ($${requestedCredit}) supera el cupo disponible ($${cupoDisponible}). Cupo Total: $${clientExists.cupoTotal}, Deuda Actual: $${currentDebt}.`
+                    );
+                }
             }
+        }
+
+        let finalRequestedCredit = requestedCredit;
+
+        if (orderData.paymentMethod === "Credito") {
+            finalRequestedCredit = calculatedTotal;
         }
 
         const newOrderEntity = new OrderEntity({
@@ -99,6 +132,7 @@ export default class CreateOrderUseCase {
             dueDate: dueDate,
             products: validatedProducts,
             paymentMethod: orderData.paymentMethod,
+            requestedCredit: finalRequestedCredit,
             subtotal: calculatedSubtotal,
             iva: calculatedIva,
             total: calculatedTotal,
