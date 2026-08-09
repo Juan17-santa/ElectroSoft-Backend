@@ -4,79 +4,31 @@
  */
 
 const VALID_PERMISSIONS = [
-  // Categorías de productos
-  "categorias:ver",
-  "categorias:crear",
-  "categorias:editar",
-  "categorias:estado",
-  "categorias:eliminar",
-
+  // Categorías
+  "categorias:acceso", "categorias:ver", "categorias:crear", "categorias:editar", "categorias:estado", "categorias:eliminar",
   // Productos
-  "productos:ver",
-  "productos:crear",
-  "productos:editar",
-  "productos:estado",
-  "productos:eliminar",
-  "productos:reporte",
-
+  "productos:acceso", "productos:ver", "productos:crear", "productos:editar", "productos:estado", "productos:eliminar", "productos:reporte",
   // Proveedores
-  "proveedores:ver",
-  "proveedores:crear",
-  "proveedores:editar",
-  "proveedores:estado",
-  "proveedores:eliminar",
-
+  "proveedores:acceso", "proveedores:ver", "proveedores:crear", "proveedores:editar", "proveedores:estado", "proveedores:eliminar",
   // Compras
-  "compras:ver",
-  "compras:crear",
-  "compras:anular",
-  "compras:reporte",
-
+  "compras:acceso", "compras:ver", "compras:crear", "compras:anular", "compras:reporte",
   // Clientes
-  "clientes:ver",
-  "clientes:crear",
-  "clientes:editar",
-  "clientes:cupo",
-  "clientes:eliminar",
-  "clientes:reporte",
-
+  "clientes:acceso", "clientes:ver", "clientes:crear", "clientes:editar", "clientes:cupo", "clientes:eliminar", "clientes:reporte",
   // Pedidos
-  "pedidos:ver",
-  "pedidos:procesar",
-  "pedidos:anular",
-  "pedidos:reporte",
-
+  "pedidos:acceso", "pedidos:ver", "pedidos:crear", "pedidos:procesar", "pedidos:anular", "pedidos:reporte",
   // Ventas
-  "ventas:ver",
-  "ventas:crear",
-  "ventas:anular",
-  "ventas:devolver",
-  "ventas:abonar",
-  "ventas:reporte",
-
-  // Pagos y abonos
-  "pagos:ver",
-  "pagos:abonar",
-  "pagos:editar-cupo",
-
+  "ventas:acceso", "ventas:ver", "ventas:crear", "ventas:anular", "ventas:devolver", "ventas:abonar", "ventas:reporte",
+  // Pagos
+  "pagos:acceso", "pagos:ver", "pagos:abonar", "pagos:editar-cupo",
   // Devoluciones
-  "devoluciones:ver",
-  "devoluciones:editar",
-  "devoluciones:anular",
-  "devoluciones:reporte",
-
+  "devoluciones:acceso", "devoluciones:ver", "devoluciones:editar", "devoluciones:anular", "devoluciones:reporte",
   // Usuarios
-  "usuarios:ver",
-  "usuarios:crear",
-  "usuarios:editar",
-  "usuarios:estado",
-  "usuarios:eliminar",
-
-  // Dashboard y Roles 
+  "usuarios:acceso", "usuarios:ver", "usuarios:crear", "usuarios:editar", "usuarios:estado", "usuarios:eliminar",
+  // Dashboard
   "dashboard:acceso",
-  "roles:acceso",
+  // Roles
+  "roles:acceso", "roles:ver", "roles:crear", "roles:editar", "roles:estado", "roles:eliminar",
 ];
-
 export default class RoleEntity {
   constructor({ id, name, description, permissions }) {
     if (!name || typeof name !== "string" || name.trim().length < 2) {
@@ -107,18 +59,18 @@ export default class RoleEntity {
   // Devuelve los permisos agrupados por módulo (útil para el frontend)
   static get permissionsByModule() {
     return {
-      categorias: ["categorias:ver", "categorias:crear", "categorias:editar", "categorias:estado", "categorias:eliminar"],
-      productos: ["productos:ver", "productos:crear", "productos:editar", "productos:estado", "productos:eliminar", "productos:reporte"],
-      proveedores: ["proveedores:ver", "proveedores:crear", "proveedores:editar", "proveedores:estado", "proveedores:eliminar"],
-      compras: ["compras:ver", "compras:crear", "compras:anular", "compras:reporte"],
-      clientes: ["clientes:ver", "clientes:crear", "clientes:editar", "clientes:cupo", "clientes:eliminar", "clientes:reporte"],
-      pedidos: ["pedidos:ver", "pedidos:procesar", "pedidos:anular", "pedidos:reporte"],
-      ventas: ["ventas:ver", "ventas:crear", "ventas:anular", "ventas:devolver", "ventas:abonar", "ventas:reporte"],
-      pagos: ["pagos:ver", "pagos:abonar", "pagos:editar-cupo"],
-      devoluciones: ["devoluciones:ver", "devoluciones:editar", "devoluciones:anular", "devoluciones:reporte"],
-      usuarios: ["usuarios:ver", "usuarios:crear", "usuarios:editar", "usuarios:estado", "usuarios:eliminar"],
+      categorias: ["categorias:acceso", "categorias:ver", "categorias:crear", "categorias:editar", "categorias:estado", "categorias:eliminar"],
+      productos: ["productos:acceso", "productos:ver", "productos:crear", "productos:editar", "productos:estado", "productos:eliminar", "productos:reporte"],
+      proveedores: ["proveedores:acceso", "proveedores:ver", "proveedores:crear", "proveedores:editar", "proveedores:estado", "proveedores:eliminar"],
+      compras: ["compras:acceso", "compras:ver", "compras:crear", "compras:anular", "compras:reporte"],
+      clientes: ["clientes:acceso", "clientes:ver", "clientes:crear", "clientes:editar", "clientes:cupo", "clientes:eliminar", "clientes:reporte"],
+      pedidos: ["pedidos:acceso", "pedidos:ver", "pedidos:crear", "pedidos:procesar", "pedidos:anular", "pedidos:reporte"],
+      ventas: ["ventas:acceso", "ventas:ver", "ventas:crear", "ventas:anular", "ventas:devolver", "ventas:abonar", "ventas:reporte"],
+      pagos: ["pagos:acceso", "pagos:ver", "pagos:abonar", "pagos:editar-cupo"],
+      devoluciones: ["devoluciones:acceso", "devoluciones:ver", "devoluciones:editar", "devoluciones:anular", "devoluciones:reporte"],
+      usuarios: ["usuarios:acceso", "usuarios:ver", "usuarios:crear", "usuarios:editar", "usuarios:estado", "usuarios:eliminar"],
       dashboard: ["dashboard:acceso"],
-      roles: ["roles:acceso"],
+      roles: ["roles:acceso", "roles:ver", "roles:crear", "roles:editar", "roles:estado", "roles:eliminar"],
     };
   }
 }

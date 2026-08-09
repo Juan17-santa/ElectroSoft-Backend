@@ -5,16 +5,16 @@ import { requirePermission } from "../../../infrastructure/middlewares/requirePe
 
 const router = Router();
 
-// Permisos válidos agrupados — cualquier autenticado (el frontend los necesita al crear roles)
+// Públicas para cualquier autenticado
 router.get("/permissions", requireAuth, RoleController.getPermissions);
+router.get("/list", requireAuth, RoleController.getList); // ← antes de /:id
 
-// Todos requieren roles:acceso
-router.get("/", requireAuth, requirePermission("roles:acceso"), RoleController.getAll);
-router.get("/list", requireAuth, RoleController.getList);
-router.get("/:id", requireAuth, requirePermission("roles:acceso"), RoleController.getById);
-router.post("/", requireAuth, requirePermission("roles:acceso"), RoleController.create);
-router.put("/:id", requireAuth, requirePermission("roles:acceso"), RoleController.update);
-router.delete("/:id", requireAuth, requirePermission("roles:acceso"), RoleController.delete);
-router.patch("/:id/toggle-status", requireAuth, requirePermission("roles:acceso"), RoleController.toggleStatus);
+// Protegidas con permisos granulares
+router.get("/", requireAuth, requirePermission("roles:acceso", "roles:ver"), RoleController.getAll);
+router.get("/:id", requireAuth, requirePermission("roles:ver"), RoleController.getById);
+router.post("/", requireAuth, requirePermission("roles:crear"), RoleController.create);
+router.put("/:id", requireAuth, requirePermission("roles:editar"), RoleController.update);
+router.delete("/:id", requireAuth, requirePermission("roles:eliminar"), RoleController.delete);
+router.patch("/:id/toggle-status", requireAuth, requirePermission("roles:estado"), RoleController.toggleStatus);
 
 export default router;

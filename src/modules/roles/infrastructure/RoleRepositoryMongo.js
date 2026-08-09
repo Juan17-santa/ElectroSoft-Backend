@@ -10,7 +10,9 @@ export const roleRepository = {
   },
 
   findByName: async (name) => {
-    return await RoleModel.findOne({ name: name.trim() });
+    return await RoleModel.findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") } 
+    });
   },
 
   create: async (roleData) => {

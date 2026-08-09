@@ -12,6 +12,12 @@ export default class UpdateRoleUseCase {
     const updateData = {};
 
     if (name) {
+      // Verificar nombre duplicado case-insensitive
+      const duplicate = await this.roleRepository.findByName(name);
+      if (duplicate && duplicate._id.toString() !== id) {
+        throw new Error("Ya existe un rol con ese nombre");
+      }
+
       const roleEntity = new RoleEntity({
         name,
         description: description ?? existing.description,
