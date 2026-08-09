@@ -35,8 +35,7 @@ export default class ProductEntity {
             if (typeof price !== "number" && typeof price !== "string") throw new Error("El precio debe ser un número");
             if (isNaN(normalizedPrice)) throw new Error("El precio debe ser un número");
             if (normalizedPrice < 0) throw new Error("El precio no puede ser negativo");
-            if (!Number.isInteger(normalizedPrice)) throw new Error("El precio debe ser un número entero");
-            this.price = normalizedPrice;
+            this.price = Number(normalizedPrice.toFixed(2));
         }
 
         // VALIDACIÓN: STOCK
