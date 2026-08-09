@@ -2,21 +2,28 @@
  * Caso de uso para registrar un pago o abono a una venta.
  *
  * Responsabilidades:
- * - Validar que la venta exista y esté en estado ACTIVA.
- * - Calcular el totalPagado sumando todos los abonos previos.
+ * - Validar que la venta exista y no esté anulada. Se permiten ventas con
+ *   devoluciones activas (Vigente, Devolución Parcial, Devuelto, Finalizado).
+ * - Calcular el saldo pendiente con el calculador canónico de ventas
+ *   (incluye pagos y reembolsos de devoluciones RESUELTAS).
  * - Validar que el monto no supere el saldo pendiente.
  * - Calcular el saldoPendiente y determinar el estado del pago.
  * - Crear la entidad PaymentEntity con validaciones de dominio.
- * - Guardar el pago en el repositorio.
+ * - Guardar el pago y recalcular saldo/estado de la venta.
  *
  * Flujo de cálculo:
- *   totalPagadoAnterior = suma de todos los pagos previos para esta venta
- *   nuevoTotalPagado    = totalPagadoAnterior + monto
- *   nuevoSaldo          = totalVenta - nuevoTotalPagado
- *   estado              = nuevoSaldo === 0 ? 'PAGADA' : 'PENDIENTE'
+ *   saldoActual          = max(0, total - pagoBase - pagos - reembolsos)
+ *   nuevoTotalPagado     = pagoBase + pagos previos + monto
+ *   nuevoSaldo           = max(0, total - nuevoTotalPagado)
+ *   estado               = nuevoSaldo === 0 ? 'PAGADA' : 'PENDIENTE'
  */
 import mongoose from "mongoose";
 import PaymentEntity from "../domain/PaymentEntity.js";
+import {
+    computeSaleEstado,
+    getSalePagoBase,
+    getSaleSaldo,
+} from "../../sales/infrastructure/SaleFinancialStateService.js";
 
 function isValidObjectId(id) {
     if (!mongoose.Types.ObjectId.isValid(id)) return false;
@@ -43,25 +50,22 @@ export default class CreatePaymentUseCase {
             throw new Error("La venta asociada al pago no existe");
         }
 
-        if (venta.estado !== "ACTIVA" && venta.estado !== "Vigente") {
-            throw new Error("Solo se pueden registrar pagos en ventas activas o vigentes");
+        if (venta.estado === "ANULADA" || venta.estado === "Anulado") {
+            throw new Error("No se pueden registrar pagos en una venta anulada");
         }
 
-        // Calcular el total ya pagado (suma de todos los pagos anteriores válidos)
+        // Calcular el total ya pagado (pago base + abonos anteriores válidos)
         const pagosAnteriores = await this.paymentRepository.findByVentaId(ventaId);
-        
-        let pagoInicial = 0;
-        if (venta.tipoVenta === "Mixto" || venta.formaPago === "Mixto") {
-            pagoInicial = Number(venta.montoContado) || 0;
-        }
 
+        const pagoInicial = getSalePagoBase(venta);
         const totalPagadoAnterior = pagoInicial + pagosAnteriores.reduce(
             (acc, p) => acc + (String(p.estado).toUpperCase().includes('ANULAD') ? 0 : Number(p.monto)),
             0
         );
 
+        // Saldo real: considera pagos y reembolsos de devoluciones RESUELTAS
         const totalVenta = Number(venta.total);
-        const saldoActual = totalVenta - totalPagadoAnterior;
+        const saldoActual = await getSaleSaldo(venta);
 
         // Validar que ya no esté pagada
         if (saldoActual <= 0) {
@@ -97,9 +101,17 @@ export default class CreatePaymentUseCase {
 
         const createdPayment = await this.paymentRepository.create(payment);
 
-        if (nuevoSaldoPendiente === 0) {
-            await this.saleGateway.updateSale(ventaId, { estado: "Finalizado" });
+        // Recalcular saldo y estado de la venta con el calculador canónico
+        const [nuevoSaldo, nuevoEstadoVenta] = await Promise.all([
+            getSaleSaldo(venta),
+            computeSaleEstado(venta),
+        ]);
+
+        const saleUpdate = { montoPorPagar: nuevoSaldo };
+        if (nuevoEstadoVenta !== venta.estado) {
+            saleUpdate.estado = nuevoEstadoVenta;
         }
+        await this.saleGateway.updateSale(ventaId, saleUpdate);
 
         return createdPayment;
     }

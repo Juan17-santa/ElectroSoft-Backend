@@ -84,6 +84,10 @@ export default class DevolutionEntity {
             motivo: producto.motivo ?? "",
             submotivo: producto.submotivo ?? "",
             condicionProducto: producto.condicionProducto ?? "",
+            regresarAlInventario:
+                producto.regresarAlInventario === undefined
+                    ? true
+                    : Boolean(producto.regresarAlInventario),
             gestion: producto.gestion ?? "",
             responsable: producto.responsable ?? "",
             garantiaProveedor:

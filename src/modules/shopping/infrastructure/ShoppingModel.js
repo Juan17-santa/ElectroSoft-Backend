@@ -44,6 +44,13 @@ const shoppingProductSchema = new mongoose.Schema(
             required: true,
             default: false,
         },
+        // Precio que efectivamente se aplicó al inventario (WAC o sugerido).
+        // SalePrice conserva el valor tecleado por el usuario para la fórmula WAC.
+        appliedPrice: {
+            type: Number,
+            required: false,
+            default: null,
+        },
         // Snapshot del estado previo del producto para permitir una reversión exacta
         previousPrice: {
             type: Number,
@@ -117,5 +124,6 @@ const shoppingSchema = new mongoose.Schema({
 });
 
 shoppingSchema.index({ invoiceNumber: 1, estado: 1 });
+shoppingSchema.index({ createdAt: -1 });
 
 export const shoppingModel = mongoose.model("shopping", shoppingSchema);

@@ -1,6 +1,7 @@
 import DevolutionEntity from "../domain/DevolutionEntity.js";
 import {
     applyInventoryImpact,
+    applyReembolsoRules,
     recalculateSaleReturnState,
     validateReturnQuantities,
 } from "./DevolutionInventoryService.js";
@@ -50,6 +51,10 @@ export default class CreateBatchDevolutionUseCase {
                 saleId,
                 productos: allProductos,
                 session,
+            });
+
+            devolutions.forEach((devolution) => {
+                devolution.productos = applyReembolsoRules(sale, devolution.productos);
             });
 
             const createdDevolutions = [];

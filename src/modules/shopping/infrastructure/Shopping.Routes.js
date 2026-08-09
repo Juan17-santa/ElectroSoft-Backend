@@ -12,6 +12,7 @@
 import { Router } from "express";
 import {
     cancelShopping,
+    checkInvoiceExists,
     createShopping,
     getShoppingCancellationStatus,
     getShopping,
@@ -22,6 +23,7 @@ import {
 const router = Router();
 
 router.post("/", createShopping);
+router.get("/invoice-exists/:number", checkInvoiceExists);
 router.get("/:id/cancellation-status", getShoppingCancellationStatus);
 router.get("/:id/cancel", rejectGetCancelShopping);
 router.patch("/:id/cancel", cancelShopping);

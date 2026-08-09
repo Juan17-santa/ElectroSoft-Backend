@@ -50,6 +50,7 @@ export default class ShoppingEntity {
             purchasePrice: Number(product.purchasePrice),
             salePrice: Number(product.salePrice),
             useSuggestedPrice: product.useSuggestedPrice === true || product.useSuggestedPrice === "true",
+            appliedPrice: product.appliedPrice != null ? Number(product.appliedPrice) : null,
             // Campos opcionales: snapshot de precio previo para permitir reversión exacta
             previousPrice: product.previousPrice != null ? Number(product.previousPrice) : null,
             previousCostoPromedio: product.previousCostoPromedio != null ? Number(product.previousCostoPromedio) : null,

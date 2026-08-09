@@ -1,10 +1,11 @@
 export async function calculateClientDebt(clientId) {
     const { saleModel } = await import('../../sales/infrastructure/SaleModel.js');
     const { paymentModel } = await import('../../payments/infrastructure/PaymentModel.js');
+    const { getRefundsBySaleIds } = await import('../../sales/infrastructure/SaleFinancialStateService.js');
 
     const pendingSales = await saleModel.find({
         clienteId: clientId,
-        estado: { $in: ['ACTIVA', 'Vigente', 'Pendiente'] },
+        estado: { $nin: ['ANULADA', 'Anulado'] },
         tipoVenta: { $in: ['Crédito', 'Credito', 'Mixto'] }
     });
 
@@ -13,10 +14,13 @@ export async function calculateClientDebt(clientId) {
     }
 
     const saleIds = pendingSales.map(s => s._id);
-    const allPayments = await paymentModel.find({
-        estado: { $ne: 'ANULADO' },
-        ventaId: { $in: saleIds }
-    });
+    const [allPayments, refundsBySale] = await Promise.all([
+        paymentModel.find({
+            estado: { $ne: 'ANULADO' },
+            ventaId: { $in: saleIds }
+        }),
+        getRefundsBySaleIds(saleIds),
+    ]);
 
     const paymentsBySale = allPayments.reduce((acc, p) => {
         const saleIdStr = p.ventaId.toString();
@@ -36,9 +40,9 @@ export async function calculateClientDebt(clientId) {
         if (sale.tipoVenta === 'Mixto') {
             pagoInicial = (sale.montoContado != null) ? sale.montoContado : ((sale.montoCredito != null && sale.montoCredito > 0) ? Math.max(0, total - sale.montoCredito) : 0);
         }
-        
-        const pagadoCalc = pagoInicial + abonos;
-        const porPagarCalc = Math.max(0, total - pagadoCalc);
+
+        const reembolsos = refundsBySale.get(String(sale._id)) || 0;
+        const porPagarCalc = Math.max(0, total - pagoInicial - abonos - reembolsos);
         
         totalDeuda += porPagarCalc;
     });

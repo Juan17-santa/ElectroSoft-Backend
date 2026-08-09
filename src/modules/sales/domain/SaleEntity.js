@@ -18,7 +18,7 @@ export default class SaleEntity {
         total = 0,
         subtotal = 0,
         iva = 0,
-        estado = "ACTIVA",
+        estado = "Vigente",
         impactApplied = false,
         fechaVenta,
         fechaCreacion = new Date(),

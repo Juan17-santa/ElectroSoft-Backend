@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/interfaces/server.js",
     "dev": "node --watch src/interfaces/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "migrate:sales": "node scripts/migrate-sales-financial-state.js",
+    "migrate:sales:dry-run": "node scripts/migrate-sales-financial-state.js --dry-run"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +21,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.6.0",
+    "mongoose": "^9.9.1",
     "socket.io": "^4.8.3"
   }
 }

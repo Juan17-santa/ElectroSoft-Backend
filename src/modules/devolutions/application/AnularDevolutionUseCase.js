@@ -1,5 +1,6 @@
 import {
     applyInventoryImpact,
+    isFinalResolutionState,
     recalculateSaleReturnState,
 } from "./DevolutionInventoryService.js";
 
@@ -20,6 +21,11 @@ export default class AnularDevolutionUseCase {
             const devolution = await this.devolutionRepository.findById(id, session);
             if (!devolution) throw new Error("Devolucion no encontrada");
             if (devolution.anulada) throw new Error("La devolucion ya esta anulada");
+            if (isFinalResolutionState(devolution.estadoResolucion)) {
+                throw new Error(
+                    "No se puede anular una devolucion en estado final (RESUELTO o RECHAZADA)",
+                );
+            }
 
             const now = new Date();
             const updatedDevolution = await this.devolutionRepository.update(

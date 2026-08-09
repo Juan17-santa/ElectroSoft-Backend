@@ -93,8 +93,8 @@ const saleSchema = new mongoose.Schema({
     estado: {
         type: String,
         required: true,
-        default: "ACTIVA",
-        enum: ["ACTIVA", "Vigente", "Finalizado", "Devuelto", "Devolución Parcial", "ANULADA"],
+        default: "Vigente",
+        enum: ["Vigente", "Finalizado", "Devuelto", "Devolución Parcial", "ANULADA"],
     },
     impactApplied: {
         type: Boolean,

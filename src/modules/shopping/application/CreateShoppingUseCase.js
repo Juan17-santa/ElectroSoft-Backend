@@ -156,6 +156,8 @@ export default class CreateShoppingUseCase {
     }
 
     async applyInventoryImpact(shopping, productsById, session) {
+        const entries = [];
+
         for (const purchasedProduct of shopping.products) {
             const currentProduct = productsById.get(String(purchasedProduct.productId));
             const previousStock = Number(currentProduct.stock) || 0;
@@ -172,22 +174,15 @@ export default class CreateShoppingUseCase {
                 ? purchasedProduct.salePrice
                 : averageCost;
 
-            const updatedProduct = await this.externalCatalogGateway.applyPurchaseEntry(
-                purchasedProduct.productId,
-                {
-                    quantity: entryQuantity,
-                    appliedPrice,
-                    averageCost,
-                },
-                session,
-            );
-
-            if (!updatedProduct) {
-                throw new Error("Could not update inventory for one of the products");
-            }
-
-            productsById.set(String(updatedProduct._id), updatedProduct);
+            entries.push({
+                productId: purchasedProduct.productId,
+                quantity: entryQuantity,
+                appliedPrice,
+                averageCost,
+            });
         }
+
+        await this.externalCatalogGateway.bulkApplyPurchaseEntries(entries, session);
     }
 
     async resolveNewProducts(shoppingData, session) {

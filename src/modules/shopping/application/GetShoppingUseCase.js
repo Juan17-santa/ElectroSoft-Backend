@@ -1,20 +1,20 @@
 /**
- * Caso de uso para obtener todas las compras.
+ * Caso de uso para obtener compras paginadas.
  *
  * Responsabilidades:
- * - Solicitar al repositorio todas las compras registradas.
+ * - Solicitar al repositorio las compras según página, límite y búsqueda.
  * - Mantener la lógica de consulta fuera del controlador.
  *
  * Nota:
- * - No aplica reglas de negocio adicionales.
- * - Los filtros o paginación pueden agregarse luego sin afectar infraestructura HTTP.
+ * - La paginación vive en el repositorio para no mezclar infraestructura HTTP
+ *   con la capa de aplicación.
  */
 export default class GetShoppingUseCase {
     constructor(shoppingRepository) {
         this.shoppingRepository = shoppingRepository;
     }
 
-    async execute() {
-        return await this.shoppingRepository.findAll();
+    async execute({ page, limit, search } = {}) {
+        return await this.shoppingRepository.findAll({ page, limit, search });
     }
 }
