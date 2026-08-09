@@ -12,6 +12,8 @@
  * - GET    /:id                   → Obtener venta por ID
  */
 import { Router } from "express";
+import { requireAuth } from "../../../infrastructure/middlewares/requireAuth.js";
+import { requirePermission } from "../../../infrastructure/middlewares/requirePermission.js";
 import {
     createSale,
     cancelSale,
@@ -23,11 +25,11 @@ import {
 
 const router = Router();
 
-router.post("/", createSale);
-router.get("/:id/cancellation-status", getSaleCancellationStatus);
-router.get("/:id/cancel", rejectGetCancelSale);
-router.patch("/:id/cancel", cancelSale);
-router.get("/", getSales);
-router.get("/:id", getSaleById);
+router.post("/", requireAuth, requirePermission("ventas:crear"), createSale);
+router.get("/", requireAuth, requirePermission("ventas:acceso", "ventas:ver"), getSales);
+router.get("/:id/cancellation-status", requireAuth, requirePermission("ventas:ver"), getSaleCancellationStatus);
+router.get("/:id/cancel", requireAuth, rejectGetCancelSale);
+router.patch("/:id/cancel", requireAuth, requirePermission("ventas:anular"), cancelSale);
+router.get("/:id", requireAuth, requirePermission("ventas:ver"), getSaleById);
 
 export default router;
