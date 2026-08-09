@@ -5,7 +5,8 @@ import { requirePermission } from "../../../infrastructure/middlewares/requirePe
 
 const router = Router();
 
-router.get("/", requireAuth, requirePermission("usuarios:ver"), UserController.getAll);
+// GET / acepta acceso O ver
+router.get("/", requireAuth, requirePermission("usuarios:acceso", "usuarios:ver"), UserController.getAll);
 
 router.get("/check-email", requireAuth, UserController.checkEmail);
 router.get("/check-document", requireAuth, UserController.checkDocument);

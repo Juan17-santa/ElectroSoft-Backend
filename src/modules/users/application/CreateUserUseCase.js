@@ -41,8 +41,13 @@ export default class CreateUserUseCase {
     // 6. Hashea la contraseña por defecto y guarda
     const hashedPassword = await encryptPassword(DEFAULT_PASSWORD);
 
+    const toTitleCase = (str) =>
+      str.split(" ")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+
     return await this.userRepository.create({
-      fullName: userEntity.fullName,
+      fullName: toTitleCase(userEntity.fullName), // ← agregar
       email: userEntity.email,
       password: hashedPassword,
       phone: userEntity.phone,
