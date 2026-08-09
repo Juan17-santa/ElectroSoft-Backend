@@ -11,6 +11,8 @@
  * para que Express no confunda "venta" como un id.
  */
 import { Router } from "express";
+import { requireAuth } from "../../../infrastructure/middlewares/requireAuth.js";
+import { requirePermission } from "../../../infrastructure/middlewares/requirePermission.js";
 import {
     createPayment,
     getPayments,
@@ -21,10 +23,10 @@ import {
 
 const router = Router();
 
-router.post("/", createPayment);
-router.get("/venta/:ventaId", getPaymentsByVenta);
-router.get("/", getPayments);
-router.get("/:id", getPaymentById);
-router.patch("/:id/cancel", cancelPayment);
+router.post("/", requireAuth, requirePermission("pagos:abonar"), createPayment);
+router.get("/", requireAuth, requirePermission("pagos:acceso", "pagos:ver"), getPayments);
+router.get("/venta/:ventaId", requireAuth, requirePermission("pagos:ver"), getPaymentsByVenta);
+router.get("/:id", requireAuth, requirePermission("pagos:ver"), getPaymentById);
+router.patch("/:id/cancel", requireAuth, requirePermission("pagos:anular"), cancelPayment);
 
 export default router;
