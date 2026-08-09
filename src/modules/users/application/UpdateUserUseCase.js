@@ -13,12 +13,17 @@ export default class UpdateUserUseCase {
     if (!existing) throw new Error("Usuario no encontrado");
 
     const updateData = {};
+    
+    const toTitleCase = (str) =>
+      str.split(" ")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
 
     // 2. Validar y asignar campos opcionales
     if (fullName) {
       if (fullName.trim().length < 3)
         throw new Error("El nombre completo debe tener al menos 3 caracteres");
-      updateData.fullName = fullName.trim();
+      updateData.fullName = toTitleCase(fullName.trim()); // ← agregar
     }
 
     if (email) {
