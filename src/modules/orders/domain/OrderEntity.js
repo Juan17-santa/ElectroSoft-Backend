@@ -50,7 +50,7 @@ export default class OrderEntity {
         }
 
         // VALIDACIÓN: ESTADO
-        const validStatus = ["Pendiente", "Anulado", "Mixto"];
+        const validStatus = ["Pendiente", "Anulado"];
 
         if (status && !validStatus.includes(status)) {
             throw new Error("Estado inválido");

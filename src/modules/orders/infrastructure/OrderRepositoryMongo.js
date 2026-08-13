@@ -1,12 +1,3 @@
-/**
- * Repositorio de pedidos (MongoDB).
- *
- * Responsabilidades:
- * - Interactuar directamente con la colección de órdenes.
- * - Exponer operaciones CRUD para el módulo orders.
- * - Aplicar la anulación automática de pedidos pendientes cuando corresponde.
- */
-
 import { productModel } from "../../products/infrastructure/ProductModel.js";
 import { orderModel } from "./OrderModel.js";
 
@@ -54,39 +45,46 @@ class OrderRepositoryMongo {
 
         if (expiredOrders.length === 0) return;
 
-        for (const order of expiredOrders) {
-            for (const item of order.products) {
-                await productModel.findByIdAndUpdate(item.product, {
+        const stockPromises = expiredOrders.flatMap(order =>
+            (order.products || []).map(item =>
+                productModel.findByIdAndUpdate(item.product, {
                     $inc: { stock: item.quantity }
-                });
-            }
-        }
+                })
+            )
+        );
+
+        await Promise.all(stockPromises);
 
         return await orderModel.updateMany(
             { status: "Pendiente", dueDate: { $lt: now } },
             {
-                status: "Anulado",
-                cancelReason: "Pedido anulado automáticamente por vencimiento de fecha.",
-                canceledAt: now
+                $set: {
+                    status: "Anulado",
+                    cancelReason: "Pedido anulado automáticamente por vencimiento de fecha.",
+                    canceledAt: now
+                }
             }
         );
     }
 
     async expireSingleOrder(order) {
+        if (!order) return null;
+
         const now = new Date();
 
-        for (const item of order.products) {
-            await productModel.findByIdAndUpdate(item.product, {
+        const stockPromises = (order.products || []).map(item =>
+            productModel.findByIdAndUpdate(item.product, {
                 $inc: { stock: item.quantity }
-            });
-        }
+            })
+        );
+
+        await Promise.all(stockPromises);
 
         order.status = "Anulado";
         order.cancelReason = "Pedido anulado automáticamente por vencimiento de fecha.";
         order.canceledAt = now;
-        await order.save();
 
-        return order;
+        return await order.save();
     }
 }
 

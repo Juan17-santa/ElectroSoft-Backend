@@ -87,7 +87,7 @@ export default class CreateProviderUseCase {
             const ContactEmailExists = await this.providerRepository.findByContactEmail(contactEmail);
 
             if (ContactEmailExists) {
-                throw new Error("Este correo de empresa ya se encuentra registrado");
+                throw new Error("Este correo de contacto ya se encuentra registrado");
             }
         }
 

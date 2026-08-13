@@ -44,7 +44,7 @@ export default class CheckProviderUniqueFieldsUseCase {
                 return {
                     exists: true,
                     field: "contactEmail",
-                    message: "Este correo de empresa ya se encuentra registrado"
+                    message: "Este correo de contacto ya se encuentra registrado"
                 };
             }
 
