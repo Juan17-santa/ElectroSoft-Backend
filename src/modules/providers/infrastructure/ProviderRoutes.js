@@ -13,17 +13,19 @@
  */
 
 import { Router } from "express";
+import { requireAuth } from "../../../infrastructure/middlewares/requireAuth.js";
+import { requirePermission } from "../../../infrastructure/middlewares/requirePermission.js";
 import { changeStatusProvider, createProvider, deleteProvider, getProviders, getProviderById, updateProvider, checkProviderUnique } from "./ProviderController.js";
 
 
 const router = Router();
 
-router.post("/", createProvider)
-router.post("/check-unique", checkProviderUnique);
-router.get("/", getProviders)
-router.get("/:id", getProviderById)
-router.put("/:id", updateProvider)
-router.delete("/:id", deleteProvider)
-router.patch("/:id/status", changeStatusProvider);
+router.post("/", requireAuth, requirePermission("proveedores:crear"), createProvider);
+router.post("/check-unique", requireAuth, requirePermission("proveedores:acceso", "proveedores:ver"), checkProviderUnique);
+router.get("/", requireAuth, requirePermission("proveedores:acceso", "proveedores:ver"), getProviders);
+router.get("/:id", requireAuth, requirePermission("proveedores:ver"), getProviderById);
+router.put("/:id", requireAuth, requirePermission("proveedores:editar"), updateProvider);
+router.delete("/:id", requireAuth, requirePermission("proveedores:eliminar"), deleteProvider);
+router.patch("/:id/status", requireAuth, requirePermission("proveedores:estado"), changeStatusProvider);
 
 export default router;

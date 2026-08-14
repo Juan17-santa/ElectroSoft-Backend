@@ -12,6 +12,8 @@
  */
 
 import { Router } from "express";
+import { requireAuth } from "../../../infrastructure/middlewares/requireAuth.js";
+import { requirePermission } from "../../../infrastructure/middlewares/requirePermission.js";
 import {
     createOrder,
     getOrders,
@@ -22,10 +24,10 @@ import {
 
 const router = Router();
 
-router.post("/", createOrder);
-router.get("/", getOrders);
-router.get("/:id", getOrderById);
-router.patch("/:id/cancel", cancelOrder);
-router.patch("/:id/confirm", confirmOrder);
+router.post("/", requireAuth, requirePermission("pedidos:procesar"), createOrder);
+router.get("/", requireAuth, requirePermission("pedidos:acceso", "pedidos:ver"), getOrders);
+router.get("/:id", requireAuth, requirePermission("pedidos:ver"), getOrderById);
+router.patch("/:id/cancel", requireAuth, requirePermission("pedidos:anular"), cancelOrder);
+router.patch("/:id/confirm", requireAuth, requirePermission("pedidos:procesar"), confirmOrder);
 
 export default router;
