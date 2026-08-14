@@ -13,15 +13,17 @@
  */
 
 import { Router } from "express";
+import { requireAuth } from "../../../infrastructure/middlewares/requireAuth.js";
+import { requirePermission } from "../../../infrastructure/middlewares/requirePermission.js";
 import { createProduct, getProducts, getProductById, updateProduct, deleteProduct, changeStatusProduct } from "./Product.Controller.js";
 
 const router = Router();
 
-router.post("/", createProduct);
-router.get("/", getProducts);
-router.get("/:id", getProductById);
-router.put("/:id", updateProduct);
-router.delete("/:id", deleteProduct);
-router.patch("/:id/status", changeStatusProduct);
+router.post("/", requireAuth, requirePermission("productos:crear"), createProduct);
+router.get("/", requireAuth, requirePermission("productos:acceso", "productos:ver"), getProducts);
+router.get("/:id", requireAuth, requirePermission("productos:ver"), getProductById);
+router.put("/:id", requireAuth, requirePermission("productos:editar"), updateProduct);
+router.delete("/:id", requireAuth, requirePermission("productos:eliminar"), deleteProduct);
+router.patch("/:id/status", requireAuth, requirePermission("productos:estado"), changeStatusProduct);
 
 export default router;
