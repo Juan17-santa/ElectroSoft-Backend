@@ -1,47 +1,6 @@
 const HOURS_LIMIT = 48;
 const MILLISECONDS_PER_HOUR = 1000 * 60 * 60;
 
-function parseInvoiceDateEndOfDay(purchaseDate) {
-    if (!purchaseDate || typeof purchaseDate !== "string") {
-        throw new Error("The purchaseDate is required to cancel the purchase");
-    }
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(purchaseDate)) {
-        const [year, month, day] = purchaseDate.split("-").map(Number);
-        const parsedDate = new Date(year, month - 1, day, 23, 59, 59, 999);
-
-        if (
-            Number.isNaN(parsedDate.getTime()) ||
-            parsedDate.getFullYear() !== year ||
-            parsedDate.getMonth() !== month - 1 ||
-            parsedDate.getDate() !== day
-        ) {
-            throw new Error("The purchaseDate is not valid");
-        }
-
-        return parsedDate;
-    }
-
-    const parts = purchaseDate.split("/");
-    if (parts.length !== 3) {
-        throw new Error("The purchaseDate must be in format DD/MM/YYYY or YYYY-MM-DD");
-    }
-
-    const [day, month, year] = parts.map(Number);
-    const parsedDate = new Date(year, month - 1, day, 23, 59, 59, 999);
-
-    if (
-        Number.isNaN(parsedDate.getTime()) ||
-        parsedDate.getFullYear() !== year ||
-        parsedDate.getMonth() !== month - 1 ||
-        parsedDate.getDate() !== day
-    ) {
-        throw new Error("The purchaseDate is not valid");
-    }
-
-    return parsedDate;
-}
-
 function validateCancellationWindow(shopping, now) {
     const createdAt = new Date(shopping.createdAt);
 
@@ -52,13 +11,6 @@ function validateCancellationWindow(shopping, now) {
     const hoursFromCreation = (now - createdAt) / MILLISECONDS_PER_HOUR;
     if (hoursFromCreation >= HOURS_LIMIT) {
         throw new Error("More than 48 hours have passed since the creation of the purchase");
-    }
-
-    const purchaseDateEndOfDay = parseInvoiceDateEndOfDay(shopping.purchaseDate);
-    const hoursFromInvoice = (now - purchaseDateEndOfDay) / MILLISECONDS_PER_HOUR;
-
-    if (hoursFromInvoice >= HOURS_LIMIT) {
-        throw new Error("More than 48 hours have passed since the purchase date");
     }
 }
 
@@ -111,6 +63,28 @@ export default class CancelShoppingUseCase {
                 throw new Error("No se configuro el repositorio de productos para revertir inventario");
             }
 
+            const cancellationInfo = {
+                motivo: motivo ?? "Anulada desde backend",
+                fechaAnulacion: now,
+            };
+
+            // Actualización condicional: solo se anula si sigue ACTIVA. Evita que
+            // una doble anulación revierta el stock dos veces.
+            const updatedShopping = await this.shoppingRepository.update(
+                id,
+                {
+                    estado: "ANULADA",
+                    cancelledAt: now,
+                    infoAnulacion: cancellationInfo,
+                },
+                session,
+                { estado: "ACTIVA" },
+            );
+
+            if (!updatedShopping) {
+                throw new Error("La compra ya fue anulada por otra solicitud");
+            }
+
             await this.externalCatalogGateway.bulkRevertPurchaseEntries(
                 shopping.products.map((producto) => ({
                     productId: producto.productId?._id ?? producto.productId,
@@ -120,21 +94,6 @@ export default class CancelShoppingUseCase {
                     previousPrice: producto.previousPrice ?? null,
                     previousCostoPromedio: producto.previousCostoPromedio ?? null,
                 })),
-                session,
-            );
-
-            const cancellationInfo = {
-                motivo: motivo ?? "Anulada desde backend",
-                fechaAnulacion: now,
-            };
-
-            const updatedShopping = await this.shoppingRepository.update(
-                id,
-                {
-                    estado: "ANULADA",
-                    cancelledAt: now,
-                    infoAnulacion: cancellationInfo,
-                },
                 session,
             );
 

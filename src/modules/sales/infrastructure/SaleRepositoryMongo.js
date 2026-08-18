@@ -64,47 +64,67 @@ export default class SaleRepositoryMongo {
             .sort({ fechaCreacion: -1 })
             .lean();
 
-        // Obtener todos los pagos activos
-        const paymentModel = mongoose.model("Payment");
-        const [allPayments, refundsBySale] = await Promise.all([
-            paymentModel.find({
-                estado: { $ne: "ANULADO" },
-                ventaId: { $in: sales.map(s => s._id) }
-            }),
-            getRefundsBySaleIds(sales.map(s => s._id)),
-        ]);
+        return enrichSalesWithPayments(sales);
+    }
 
-        // Agrupar pagos por venta
-        const paymentsBySale = allPayments.reduce((acc, p) => {
-            const saleIdStr = p.ventaId.toString();
-            acc[saleIdStr] = (acc[saleIdStr] || 0) + p.monto;
-            return acc;
-        }, {});
+    async findByIds(ids) {
+        const validIds = (Array.isArray(ids) ? ids : [])
+            .map(String)
+            .filter((id) => mongoose.Types.ObjectId.isValid(id));
 
-        // Enriquecer ventas con montoPagado y montoPorPagar (incluye reembolsos RESUELTOS)
-        return sales.map(sale => {
-            const total = sale.total || 0;
-            const abonos = paymentsBySale[sale._id.toString()] || 0;
-            const reembolsos = refundsBySale.get(String(sale._id)) || 0;
-            let pagadoCalc = 0;
-            if (sale.tipoVenta === 'Contado') {
-                pagadoCalc = total;
-            } else {
-                const pagoInicial = (sale.tipoVenta === 'Mixto') ? ((sale.montoContado != null) ? sale.montoContado : ((sale.montoCredito != null && sale.montoCredito > 0) ? Math.max(0, total - sale.montoCredito) : 0)) : 0;
-                pagadoCalc = pagoInicial + abonos;
-            }
-            const porPagarCalc = Math.max(0, total - pagadoCalc - reembolsos);
+        if (validIds.length === 0) return [];
 
-            return {
-                ...sale,
-                montoPagado: pagadoCalc,
-                montoPorPagar: porPagarCalc
-            };
-        });
+        const sales = await saleModel
+            .find({ _id: { $in: validIds } })
+            .populate("clienteId", "firstName lastName documentType documentNumber email phone")
+            .populate("productos.productoId", "name serial price warranty")
+            .lean();
+
+        return enrichSalesWithPayments(sales);
     }
 
     async hasSalesByClient(clientId) {
         const count = await saleModel.countDocuments({ clienteId: clientId });
         return count > 0;
     }
+}
+
+async function enrichSalesWithPayments(sales) {
+    // Obtener todos los pagos activos
+    const paymentModel = mongoose.model("Payment");
+    const [allPayments, refundsBySale] = await Promise.all([
+        paymentModel.find({
+            estado: { $ne: "ANULADO" },
+            ventaId: { $in: sales.map(s => s._id) }
+        }),
+        getRefundsBySaleIds(sales.map(s => s._id)),
+    ]);
+
+    // Agrupar pagos por venta
+    const paymentsBySale = allPayments.reduce((acc, p) => {
+        const saleIdStr = p.ventaId.toString();
+        acc[saleIdStr] = (acc[saleIdStr] || 0) + p.monto;
+        return acc;
+    }, {});
+
+    // Enriquecer ventas con montoPagado y montoPorPagar (incluye reembolsos RESUELTOS)
+    return sales.map(sale => {
+        const total = sale.total || 0;
+        const abonos = paymentsBySale[sale._id.toString()] || 0;
+        const reembolsos = refundsBySale.get(String(sale._id)) || 0;
+        let pagadoCalc = 0;
+        if (sale.tipoVenta === 'Contado') {
+            pagadoCalc = total;
+        } else {
+            const pagoInicial = (sale.tipoVenta === 'Mixto') ? ((sale.montoContado != null) ? sale.montoContado : ((sale.montoCredito != null && sale.montoCredito > 0) ? Math.max(0, total - sale.montoCredito) : 0)) : 0;
+            pagadoCalc = pagoInicial + abonos;
+        }
+        const porPagarCalc = Math.max(0, total - pagadoCalc - reembolsos);
+
+        return {
+            ...sale,
+            montoPagado: pagadoCalc,
+            montoPorPagar: porPagarCalc
+        };
+    });
 }

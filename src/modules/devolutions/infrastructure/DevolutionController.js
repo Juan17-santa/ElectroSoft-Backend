@@ -9,14 +9,28 @@ import DevolutionRepositoryMongo from "./DevolutionRepositoryMongo.js";
 import DevolutionTransactionManagerMongo from "./DevolutionTransactionManagerMongo.js";
 import ProductRepositoryMongo from "../../products/infrastructure/ProductRepositoryMongo.js";
 import SaleRepositoryMongo from "../../sales/infrastructure/SaleRepositoryMongo.js";
+import {
+    sendControllerError,
+    sendUnexpectedError,
+} from "../../../shared/infrastructure/controllers/errorHandler.js";
+import mongoose from "mongoose";
 
 const devolutionRepository = new DevolutionRepositoryMongo();
 const transactionManager = new DevolutionTransactionManagerMongo();
 const productRepository = new ProductRepositoryMongo();
 const saleRepository = new SaleRepositoryMongo();
 
+function isValidObjectId(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return false;
+    return new mongoose.Types.ObjectId(id).toString() === String(id);
+}
+
 export const createDevolution = async (req, res) => {
     try {
+        if (!req.body || typeof req.body !== "object" || Object.keys(req.body).length === 0) {
+            return res.status(400).json({ error: "El cuerpo de la solicitud es requerido" });
+        }
+
         const useCase = new CreateDevolutionUseCase(
             devolutionRepository,
             transactionManager,
@@ -30,7 +44,7 @@ export const createDevolution = async (req, res) => {
             data: result,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
@@ -54,12 +68,20 @@ export const createBatchDevolutions = async (req, res) => {
             data: result,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const updateDevolution = async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: "ID invalido" });
+        }
+
+        if (!req.body || typeof req.body !== "object" || Object.keys(req.body).length === 0) {
+            return res.status(400).json({ error: "El cuerpo de la solicitud es requerido" });
+        }
+
         const useCase = new UpdateDevolutionUseCase(
             devolutionRepository,
             transactionManager,
@@ -73,12 +95,16 @@ export const updateDevolution = async (req, res) => {
             data: result,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const anularDevolution = async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: "ID invalido" });
+        }
+
         const useCase = new AnularDevolutionUseCase(
             devolutionRepository,
             transactionManager,
@@ -92,12 +118,16 @@ export const anularDevolution = async (req, res) => {
             data: result,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const confirmDevolution = async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: "ID invalido" });
+        }
+
         const useCase = new ConfirmDevolutionUseCase(
             devolutionRepository,
             transactionManager,
@@ -111,19 +141,29 @@ export const confirmDevolution = async (req, res) => {
             data: result,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const getDevolutions = async (req, res) => {
     try {
         const useCase = new GetDevolutionsUseCase(devolutionRepository);
+        const { page, limit, search } = req.query;
         const includeAnuladas = req.query.includeAnuladas !== "false";
-        const result = await useCase.execute({ includeAnuladas });
+        const result = await useCase.execute({ page, limit, search, includeAnuladas });
 
-        res.json({ data: result });
+        res.json({
+            // Una fila por venta: cada grupo es un arreglo con sus devoluciones.
+            data: result.items.map((group) => group.devoluciones),
+            pagination: {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            },
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendUnexpectedError(res, error);
     }
 };
 
@@ -136,17 +176,41 @@ export const getDevolutionsBySaleId = async (req, res) => {
 
         res.json({ data: result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendUnexpectedError(res, error);
+    }
+};
+
+export const exportDevolutions = async (req, res) => {
+    try {
+        const { from, to, page, limit } = req.query;
+        const includeAnuladas = req.query.includeAnuladas !== "false";
+        const result = await devolutionRepository.exportAll({ from, to, includeAnuladas, page, limit });
+
+        res.json({
+            data: result.data,
+            pagination: {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            },
+        });
+    } catch (error) {
+        sendControllerError(res, error, 400);
     }
 };
 
 export const getDevolutionById = async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: "ID invalido" });
+        }
+
         const useCase = new GetDevolutionByIdUseCase(devolutionRepository);
         const result = await useCase.execute(req.params.id);
 
         res.json({ data: result });
     } catch (error) {
-        res.status(404).json({ error: error.message });
+        sendControllerError(res, error, 404);
     }
 };

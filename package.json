@@ -8,7 +8,9 @@
     "dev": "node --watch src/interfaces/server.js",
     "test": "node --test",
     "migrate:sales": "node scripts/migrate-sales-financial-state.js",
-    "migrate:sales:dry-run": "node scripts/migrate-sales-financial-state.js --dry-run"
+    "migrate:sales:dry-run": "node scripts/migrate-sales-financial-state.js --dry-run",
+    "migrate:shopping": "node scripts/migrate-shopping-purchase-date.js",
+    "migrate:shopping:dry-run": "node scripts/migrate-shopping-purchase-date.js --dry-run"
   },
   "keywords": [],
   "author": "",

@@ -7,6 +7,7 @@ export default class ShoppingEntity {
         estado = "ACTIVA",
         impactApplied = false,
         purchaseDate,
+        purchaseDateIso,
         createdAt = new Date(),
         cancelledAt = null,
     }) {
@@ -59,6 +60,7 @@ export default class ShoppingEntity {
         this.estado = estado;
         this.impactApplied = impactApplied;
         this.purchaseDate = purchaseDate;
+        this.purchaseDateIso = purchaseDateIso ?? null;
         this.createdAt = createdAt;
         this.cancelledAt = cancelledAt;
     }

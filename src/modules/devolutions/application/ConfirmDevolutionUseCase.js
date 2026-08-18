@@ -52,12 +52,27 @@ export default class ConfirmDevolutionUseCase {
                 ],
             };
 
-            if (!devolution.impactApplied) {
+            const shouldApplyImpact = !devolution.impactApplied;
+
+            if (shouldApplyImpact) {
                 await applyInventoryImpact(this.productRepository, devolution.productos, session);
                 updateData.impactApplied = true;
             }
 
-            const updatedDevolution = await this.devolutionRepository.update(id, updateData, session);
+            // Actualización condicional: si aplica impacto de inventario, se exige
+            // impactApplied: false para que dos confirmaciones concurrentes no
+            // dupliquen el stock.
+            const updatedDevolution = await this.devolutionRepository.update(
+                id,
+                updateData,
+                session,
+                shouldApplyImpact ? { impactApplied: false } : {},
+            );
+
+            if (!updatedDevolution) {
+                throw new Error("La devolucion ya fue confirmada por otra solicitud");
+            }
+
             await recalculateSaleReturnState({
                 saleRepository: this.saleRepository,
                 devolutionRepository: this.devolutionRepository,

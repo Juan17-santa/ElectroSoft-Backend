@@ -16,6 +16,7 @@ import {
     cancelShopping,
     checkInvoiceExists,
     createShopping,
+    exportShopping,
     getShoppingCancellationStatus,
     getShopping,
     getShoppingById,
@@ -25,11 +26,12 @@ import {
 const router = Router();
 
 router.post("/", requireAuth, requirePermission("compras:crear"), createShopping);
-router.get("/invoice-exists/:number", requireAuth, requirePermission("compras:acceso", "compras:ver"), checkInvoiceExists);
-router.get("/:id/cancellation-status", requireAuth, requirePermission("compras:ver"), getShoppingCancellationStatus);
-router.get("/:id/cancel", requireAuth, rejectGetCancelShopping);
+router.get("/invoice-exists/:number", requireAuth, requirePermission("compras:ver"), checkInvoiceExists);
+router.get("/export", requireAuth, requirePermission("compras:reporte"), exportShopping);
+router.get("/:id/cancellation-status", requireAuth, requirePermission("compras:anular"), getShoppingCancellationStatus);
+router.get("/:id/cancel", requireAuth, requirePermission("compras:anular"), rejectGetCancelShopping);
 router.patch("/:id/cancel", requireAuth, requirePermission("compras:anular"), cancelShopping);
-router.get("/", requireAuth, requirePermission("compras:acceso", "compras:ver"), getShopping);
+router.get("/", requireAuth, requirePermission("compras:ver"), getShopping);
 router.get("/:id", requireAuth, requirePermission("compras:ver"), getShoppingById);
 
 export default router;

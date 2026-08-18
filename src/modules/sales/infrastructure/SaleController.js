@@ -21,6 +21,7 @@ import mongoose from "mongoose";
 import CreateSaleUseCase from "../application/CreateSaleUseCase.js";
 import CancelSaleUseCase from "../application/CancelSaleUseCase.js";
 import GetSalesUseCase from "../application/GetSalesUseCase.js";
+import GetSalesByIdsUseCase from "../application/GetSalesByIdsUseCase.js";
 import GetSaleByIdUseCase from "../application/GetSaleByIdUseCase.js";
 import SaleRepositoryMongo from "./SaleRepositoryMongo.js";
 import SaleExternalCatalogGatewayMongo from "./SaleExternalCatalogGatewayMongo.js";
@@ -131,6 +132,23 @@ export const getSales = async (req, res) => {
     try {
         const useCase = new GetSalesUseCase(saleRepository);
         const result = await useCase.execute();
+
+        res.json({ data: result });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Obtiene ventas específicas por IDs (p. ej. las ventas de un reporte de devoluciones)
+export const getSalesByIds = async (req, res) => {
+    try {
+        const ids = String(req.query.ids ?? "")
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean);
+
+        const useCase = new GetSalesByIdsUseCase(saleRepository);
+        const result = await useCase.execute(ids);
 
         res.json({ data: result });
     } catch (error) {

@@ -107,6 +107,12 @@ const shoppingSchema = new mongoose.Schema({
         required: false,
         default: "",
     },
+    // Fecha de factura normalizada para permitir consultas por rango (from/to).
+    purchaseDateIso: {
+        type: Date,
+        required: false,
+        default: null,
+    },
     createdAt: {
         type: Date,
         required: true,
@@ -123,7 +129,13 @@ const shoppingSchema = new mongoose.Schema({
     },
 });
 
-shoppingSchema.index({ invoiceNumber: 1, estado: 1 });
+// Índice único parcial: una factura solo puede existir una vez en una compra
+// ACTIVA. Las anuladas pueden reutilizar el número (regla de negocio actual).
+shoppingSchema.index(
+    { invoiceNumber: 1 },
+    { unique: true, partialFilterExpression: { estado: "ACTIVA" } },
+);
 shoppingSchema.index({ createdAt: -1 });
+shoppingSchema.index({ purchaseDateIso: 1 });
 
 export const shoppingModel = mongoose.model("shopping", shoppingSchema);
