@@ -28,6 +28,9 @@ export default class AnularDevolutionUseCase {
             }
 
             const now = new Date();
+
+            // Actualización condicional: evita que una doble anulación revierta
+            // el inventario dos veces.
             const updatedDevolution = await this.devolutionRepository.update(
                 id,
                 {
@@ -42,7 +45,15 @@ export default class AnularDevolutionUseCase {
                     ],
                 },
                 session,
+                {
+                    anulada: false,
+                    estadoResolucion: { $nin: ["RESUELTO", "RECHAZADA"] },
+                },
             );
+
+            if (!updatedDevolution) {
+                throw new Error("La devolucion ya fue anulada o esta en estado final");
+            }
 
             if (devolution.impactApplied) {
                 await applyInventoryImpact(this.productRepository, devolution.productos, session, -1);

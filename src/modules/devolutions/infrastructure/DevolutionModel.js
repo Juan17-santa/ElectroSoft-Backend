@@ -150,4 +150,8 @@ const devolutionSchema = new mongoose.Schema({
     },
 });
 
+devolutionSchema.index({ fechaCreacion: -1 });
+devolutionSchema.index({ fechaDevolucion: 1 });
+devolutionSchema.index({ anulada: 1, fechaCreacion: -1 });
+
 export const devolutionModel = mongoose.model("devolution", devolutionSchema);

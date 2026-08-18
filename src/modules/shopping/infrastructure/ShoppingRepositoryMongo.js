@@ -22,6 +22,31 @@ function escapeRegex(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function parseRangeDate(value, endOfDay) {
+    if (!value) return null;
+
+    const text = String(value).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        throw new Error("The date range must be in format YYYY-MM-DD");
+    }
+
+    const [year, month, day] = text.split("-").map(Number);
+    const parsedDate = endOfDay
+        ? new Date(year, month - 1, day, 23, 59, 59, 999)
+        : new Date(year, month - 1, day, 0, 0, 0, 0);
+
+    if (
+        Number.isNaN(parsedDate.getTime()) ||
+        parsedDate.getFullYear() !== year ||
+        parsedDate.getMonth() !== month - 1 ||
+        parsedDate.getDate() !== day
+    ) {
+        throw new Error("The date range is not valid");
+    }
+
+    return parsedDate;
+}
+
 export default class ShoppingRepositoryMongo {
     async create(data, session) {
         const [shopping] = await shoppingModel.create([data], { session });
@@ -51,12 +76,16 @@ export default class ShoppingRepositoryMongo {
             .populate('products.productId', 'name');
     }
 
-    async update(id, data, session) {
-        return await shoppingModel.findByIdAndUpdate(id, data, {
-            returnDocument: "after",
-            session,
-            runValidators: true,
-        });
+    async update(id, data, session, filter = {}) {
+        return await shoppingModel.findOneAndUpdate(
+            { _id: id, ...filter },
+            data,
+            {
+                returnDocument: "after",
+                session,
+                runValidators: true,
+            },
+        );
     }
 
     async checkInvoiceExists(invoiceNumber) {
@@ -90,13 +119,61 @@ export default class ShoppingRepositoryMongo {
         };
     }
 
+    async exportAll({ from, to, search = "", page = 1, limit = 5000 } = {}) {
+        const filter = {};
+
+        const fromDate = parseRangeDate(from, false);
+        const toDate = parseRangeDate(to, true);
+
+        if (fromDate || toDate) {
+            filter.purchaseDateIso = {};
+            if (fromDate) filter.purchaseDateIso.$gte = fromDate;
+            if (toDate) filter.purchaseDateIso.$lte = toDate;
+        }
+
+        const searchFilter = await this.buildSearchFilter(search);
+        if (Object.keys(searchFilter).length > 0) {
+            if (filter.purchaseDateIso) {
+                filter.$and = [
+                    { purchaseDateIso: filter.purchaseDateIso },
+                    searchFilter,
+                ];
+                delete filter.purchaseDateIso;
+            } else {
+                Object.assign(filter, searchFilter);
+            }
+        }
+
+        const safePage = Math.max(1, Number(page) || 1);
+        const safeLimit = Math.min(5000, Math.max(1, Number(limit) || 5000));
+
+        const total = await shoppingModel.countDocuments(filter);
+
+        const items = await shoppingModel
+            .find(filter)
+            .populate(POPULATE_PROVIDER)
+            .populate(POPULATE_PRODUCTS)
+            .sort({ purchaseDateIso: -1 })
+            .skip((safePage - 1) * safeLimit)
+            .limit(safeLimit)
+            .lean();
+
+        return {
+            data: items,
+            total,
+            page: safePage,
+            limit: safeLimit,
+            totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+        };
+    }
+
     async buildSearchFilter(search) {
         const term = String(search || "").trim();
         if (!term) return {};
 
         // Se asume que un término no numérico y con letras puede ser nombre de proveedor.
         const isProviderLike = /[a-zA-Z]/.test(term) && !/^\d{4}-\d{2}-\d{2}$/.test(term);
-        const ors = [{ invoiceNumber: { $regex: term, $options: "i" } }];
+        const ors = [{ invoiceNumber: { $regex: escapeRegex(term), $options: "i" } }];
 
         // purchaseDate se guarda como DD/MM/YYYY; se usa regex para permitir
         // búsquedas parciales (año, mes o fecha completa).

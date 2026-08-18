@@ -24,14 +24,68 @@ import GetShoppingUseCase from "../application/GetShoppingUseCase.js";
 import ShoppingExternalCatalogGatewayMongo from "./ShoppingExternalCatalogGatewayMongo.js";
 import ShoppingRepositoryMongo from "./ShoppingRepositoryMongo.js";
 import ShoppingTransactionManagerMongo from "./ShoppingTransactionManagerMongo.js";
+import {
+    isInfrastructureError,
+    sendControllerError,
+    sendUnexpectedError,
+} from "../../../shared/infrastructure/controllers/errorHandler.js";
+import mongoose from "mongoose";
 
 const shoppingRepository = new ShoppingRepositoryMongo();
 const externalCatalogGateway = new ShoppingExternalCatalogGatewayMongo();
 const transactionManager = new ShoppingTransactionManagerMongo();
 
+function isValidObjectId(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return false;
+    return new mongoose.Types.ObjectId(id).toString() === String(id);
+}
+
+// Validación de estructura del DTO de creación de compra.
+function validateCreateShoppingBody(body) {
+    if (!body || typeof body !== "object") {
+        throw new Error("El cuerpo de la solicitud es requerido");
+    }
+
+    if (!body.invoiceNumber || !/^\d+$/.test(String(body.invoiceNumber).trim())) {
+        throw new Error("El invoiceNumber es requerido y debe contener solo numeros");
+    }
+
+    if (!isValidObjectId(body.providerId)) {
+        throw new Error("El providerId es requerido y debe ser un ObjectId valido");
+    }
+
+    if (!Array.isArray(body.products) || body.products.length === 0) {
+        throw new Error("La compra debe tener al menos un producto");
+    }
+
+    body.products.forEach((product, index) => {
+        if (!isValidObjectId(product.productId) && !product.newProduct) {
+            throw new Error(`El productId es requerido y debe ser un ObjectId valido en el producto ${index + 1}`);
+        }
+
+        const quantity = Number(product.quantity);
+        const purchasePrice = Number(product.purchasePrice);
+        const salePrice = Number(product.salePrice);
+
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+            throw new Error(`La quantity debe ser numerica y mayor a 0 en el producto ${index + 1}`);
+        }
+
+        if (!Number.isFinite(purchasePrice) || purchasePrice <= 0) {
+            throw new Error(`El purchasePrice debe ser numerico y mayor a 0 en el producto ${index + 1}`);
+        }
+
+        if (!Number.isFinite(salePrice) || salePrice <= 0) {
+            throw new Error(`El salePrice debe ser numerico y mayor a 0 en el producto ${index + 1}`);
+        }
+    });
+}
+
 // Crea una compra y aplica su impacto de inventario.
 export const createShopping = async (req, res) => {
     try {
+        validateCreateShoppingBody(req.body);
+
         const useCase = new CreateShoppingUseCase(
             shoppingRepository,
             transactionManager,
@@ -61,13 +115,17 @@ export const createShopping = async (req, res) => {
             data: result,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 // Anula una compra activa si cumple la regla doble de 48 horas.
 export const cancelShopping = async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: "ID invalido" });
+        }
+
         const useCase = new CancelShoppingUseCase(shoppingRepository, transactionManager, externalCatalogGateway);
         // El frontend envía el motivo en `motivo` (payload JSON). Aceptamos también `reason`.
         const motivo = req.body?.motivo ?? req.body?.reason ?? null;
@@ -78,7 +136,7 @@ export const cancelShopping = async (req, res) => {
             data: result,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
@@ -99,7 +157,28 @@ export const getShopping = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendUnexpectedError(res, error);
+    }
+};
+
+// Exporta compras por rango de fecha de factura (purchaseDateIso) y búsqueda.
+// Soporta paginación para que el frontend descargue el reporte por lotes.
+export const exportShopping = async (req, res) => {
+    try {
+        const { from, to, search, page, limit } = req.query;
+        const result = await shoppingRepository.exportAll({ from, to, search, page, limit });
+
+        res.json({
+            data: result.data,
+            pagination: {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            },
+        });
+    } catch (error) {
+        sendControllerError(res, error, 400);
     }
 };
 
@@ -109,25 +188,33 @@ export const checkInvoiceExists = async (req, res) => {
         const exists = await shoppingRepository.checkInvoiceExists(req.params.number);
         res.json({ exists });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendUnexpectedError(res, error);
     }
 };
 
 // Obtiene el detalle de una compra por ID.
 export const getShoppingById = async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: "ID invalido" });
+        }
+
         const useCase = new GetShoppingByIdUseCase(shoppingRepository);
         const result = await useCase.execute(req.params.id);
 
         res.json({ data: result });
     } catch (error) {
-        res.status(404).json({ error: error.message });
+        sendControllerError(res, error, 404);
     }
 };
 
 // Valida si una compra activa se puede anular sin modificar datos.
 export const getShoppingCancellationStatus = async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ error: "ID invalido" });
+        }
+
         const useCase = new CancelShoppingUseCase(shoppingRepository, transactionManager, externalCatalogGateway);
         await useCase.validate(req.params.id);
 
@@ -136,6 +223,9 @@ export const getShoppingCancellationStatus = async (req, res) => {
             razon: "",
         });
     } catch (error) {
+        if (isInfrastructureError(error)) {
+            return sendUnexpectedError(res, error);
+        }
         res.json({
             puedeAnularse: false,
             razon: error.message,

@@ -10,10 +10,13 @@
  * - GET    /:id           -> Obtener compra por ID.
  */
 import { Router } from "express";
+import { requireAuth } from "../../../infrastructure/middlewares/requireAuth.js";
+import { requirePermission } from "../../../infrastructure/middlewares/requirePermission.js";
 import {
     cancelShopping,
     checkInvoiceExists,
     createShopping,
+    exportShopping,
     getShoppingCancellationStatus,
     getShopping,
     getShoppingById,
@@ -22,12 +25,13 @@ import {
 
 const router = Router();
 
-router.post("/", createShopping);
-router.get("/invoice-exists/:number", checkInvoiceExists);
-router.get("/:id/cancellation-status", getShoppingCancellationStatus);
-router.get("/:id/cancel", rejectGetCancelShopping);
-router.patch("/:id/cancel", cancelShopping);
-router.get("/", getShopping);
-router.get("/:id", getShoppingById);
+router.post("/", requireAuth, requirePermission("compras:crear"), createShopping);
+router.get("/invoice-exists/:number", requireAuth, requirePermission("compras:ver"), checkInvoiceExists);
+router.get("/export", requireAuth, requirePermission("compras:reporte"), exportShopping);
+router.get("/:id/cancellation-status", requireAuth, requirePermission("compras:anular"), getShoppingCancellationStatus);
+router.get("/:id/cancel", requireAuth, requirePermission("compras:anular"), rejectGetCancelShopping);
+router.patch("/:id/cancel", requireAuth, requirePermission("compras:anular"), cancelShopping);
+router.get("/", requireAuth, requirePermission("compras:ver"), getShopping);
+router.get("/:id", requireAuth, requirePermission("compras:ver"), getShoppingById);
 
 export default router;

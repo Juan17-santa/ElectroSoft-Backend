@@ -37,6 +37,39 @@ function getCurrentInventoryPrice(product) {
     return Number(price) || 0;
 }
 
+function parsePurchaseDateToIso(purchaseDate) {
+    if (!purchaseDate || typeof purchaseDate !== "string") {
+        throw new Error("The purchaseDate is required");
+    }
+
+    let year;
+    let month;
+    let day;
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(purchaseDate)) {
+        [year, month, day] = purchaseDate.split("-").map(Number);
+    } else {
+        const parts = purchaseDate.split("/");
+        if (parts.length !== 3) {
+            throw new Error("The purchaseDate must be in format DD/MM/YYYY or YYYY-MM-DD");
+        }
+        [day, month, year] = parts.map(Number);
+    }
+
+    const parsedDate = new Date(year, month - 1, day, 12, 0, 0, 0);
+
+    if (
+        Number.isNaN(parsedDate.getTime()) ||
+        parsedDate.getFullYear() !== year ||
+        parsedDate.getMonth() !== month - 1 ||
+        parsedDate.getDate() !== day
+    ) {
+        throw new Error("The purchaseDate is not valid");
+    }
+
+    return parsedDate;
+}
+
 export default class CreateShoppingUseCase {
     constructor(shoppingRepository, transactionManager, externalCatalogGateway) {
         this.shoppingRepository = shoppingRepository;
@@ -69,6 +102,7 @@ export default class CreateShoppingUseCase {
                 ...shoppingData,
                 estado: "ACTIVA",
                 impactApplied: false,
+                purchaseDateIso: parsePurchaseDateToIso(shoppingData.purchaseDate),
                 createdAt: new Date(),
             });
 
