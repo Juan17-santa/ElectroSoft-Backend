@@ -26,7 +26,11 @@ export default class SaleRepositoryMongo {
     async findById(id, session = null) {
         return await saleModel
             .findById(id)
-            .populate("clienteId", "firstName lastName documentType documentNumber email phone")
+            .populate({
+                path: "clienteId",
+                select: "firstName lastName documentType documentNumber email phone",
+                populate: { path: "documentType", select: "name abbreviation" }
+            })
             .populate("productos.productoId", "name serial price warranty")
             .session(session);
     }
@@ -51,7 +55,11 @@ export default class SaleRepositoryMongo {
     async findAll() {
         const sales = await saleModel
             .find()
-            .populate("clienteId", "firstName lastName documentType documentNumber email phone")
+            .populate({
+                path: "clienteId",
+                select: "firstName lastName documentType documentNumber email phone",
+                populate: { path: "documentType", select: "name abbreviation" }
+            })
             .populate("productos.productoId", "name serial price warranty")
             .sort({ fechaCreacion: -1 })
             .lean();
@@ -73,6 +81,11 @@ export default class SaleRepositoryMongo {
             .lean();
 
         return enrichSalesWithPayments(sales);
+    }
+
+    async hasSalesByClient(clientId) {
+        const count = await saleModel.countDocuments({ clienteId: clientId });
+        return count > 0;
     }
 }
 

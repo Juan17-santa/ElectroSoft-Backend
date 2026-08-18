@@ -8,8 +8,10 @@ import DocumentTypeRepositoryMongo from '../../../shared/infrastructure/reposito
 import mongoose from 'mongoose';
 import NotificationService from "../../notifications/application/NotificationService.js";
 import GetClientByDocumentUseCase from '../application/GetClientByDocumentUseCase.js';
+import SaleRepositoryMongo from '../../sales/infrastructure/SaleRepositoryMongo.js';
 
 const documentTypeRepository = new DocumentTypeRepositoryMongo();
+const saleRepository = new SaleRepositoryMongo();
 
 export const createClient = async (req, res) => {
     try {
@@ -84,11 +86,11 @@ export const deleteClient = async (req, res) => {
             return res.status(400).json({ error: "ID inválido" });
         }
 
-        const useCase = new DeleteClientUseCase(clientRepository);
+        const useCase = new DeleteClientUseCase(clientRepository, saleRepository);
         const result = await useCase.execute(req.params.id);
         res.status(200).json({ message: "Cliente eliminado exitosamente", client: result });
     } catch (error) {
-        res.status(404).json({ error: error.message });
+        res.status(400).json({ error: error.message });
     }
 };
 
@@ -150,5 +152,25 @@ export const updateCupo = async (req, res) => {
         res.status(200).json({ message: "Cupo/estado actualizado", client });
     } catch (error) {
         res.status(400).json({ error: error.message });
+    }
+};
+
+export const checkEmail = async (req, res) => {
+    try {
+        const { email, excludeId } = req.query;
+        const exists = await clientRepository.findByEmailExcluding(email, excludeId);
+        res.json({ success: true, exists: !!exists });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const checkDocument = async (req, res) => {
+    try {
+        const { document, excludeId } = req.query;
+        const exists = await clientRepository.findByDocumentNumberExcluding(document, excludeId);
+        res.json({ success: true, exists: !!exists });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };

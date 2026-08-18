@@ -37,12 +37,14 @@ export default class Client {
         if (typeof firstName !== "string") {
             throw new Error("El nombre debe ser un texto");
         }
+        
+        firstName = firstName.normalize("NFC");
 
         if (firstName.trim().length < 3) {
             throw new Error("El nombre debe tener al menos 3 caracteres");
         }
 
-        const onlyLetters = /^[a-zA-Z\s]+$/;
+        const onlyLetters = /^[\p{L}\s]+$/u;
         if (!onlyLetters.test(firstName)) {
             throw new Error("El nombre solo puede contener letras");
         }
@@ -55,6 +57,8 @@ export default class Client {
         if (typeof lastName !== "string") {
             throw new Error("El apellido debe ser un texto");
         }
+        
+        lastName = lastName.normalize("NFC");
 
         if (lastName.trim().length < 3) {
             throw new Error("El apellido debe tener al menos 3 caracteres");

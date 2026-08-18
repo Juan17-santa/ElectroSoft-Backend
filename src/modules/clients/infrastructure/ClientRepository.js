@@ -21,6 +21,18 @@ export const clientRepository = {
         return await ClientModel.findOne({ email: email.toLowerCase() });
     },
 
+    findByDocumentNumberExcluding: async (documentNumber, excludeId) => {
+        const filter = { documentNumber };
+        if (excludeId) filter._id = { $ne: excludeId };
+        return await ClientModel.findOne(filter);
+    },
+
+    findByEmailExcluding: async (email, excludeId) => {
+        const filter = { email: email.toLowerCase() };
+        if (excludeId) filter._id = { $ne: excludeId };
+        return await ClientModel.findOne(filter);
+    },
+
     update: async (id, data) => {
         return await ClientModel.findByIdAndUpdate(id, data, { returnDocument: "after" }).populate('documentType');
     },
