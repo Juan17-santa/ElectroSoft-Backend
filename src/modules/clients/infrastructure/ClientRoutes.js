@@ -8,10 +8,15 @@ import {
     getClientByDocument,
     updateClient,
     deleteClient,
-    updateCupo
+    updateCupo,
+    checkEmail,
+    checkDocument
 } from './ClientController.js';
 
 const router = Router();
+
+router.get('/check-email', requireAuth, checkEmail);
+router.get('/check-document', requireAuth, checkDocument);
 
 router.post('/', requireAuth, requirePermission("clientes:crear"), createClient);
 router.get('/', requireAuth, requirePermission("clientes:acceso", "clientes:ver"), getClients);

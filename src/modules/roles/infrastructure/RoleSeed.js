@@ -20,23 +20,33 @@ const ADMINISTRADOR_PERMISSIONS = [
 ];
 
 export const seedRoles = async () => {
-  const count = await RoleModel.countDocuments();
-  if (count > 0) return;
+  try {
+    await RoleModel.findOneAndUpdate(
+      { name: "Administrador" },
+      {
+        $set: {
+          description: "Acceso total al sistema",
+          permissions: ADMINISTRADOR_PERMISSIONS,
+          isActive: true,
+        }
+      },
+      { upsert: true, returnDocument: 'after' }
+    );
 
-  await RoleModel.insertMany([
-    {
-      name: "Administrador",
-      description: "Acceso total al sistema",
-      permissions: ADMINISTRADOR_PERMISSIONS,
-      isActive: true,
-    },
-    {
-      name: "Empleado",
-      description: "Acceso completo a módulos de compras y ventas",
-      permissions: EMPLEADO_PERMISSIONS,
-      isActive: true,
-    },
-  ]);
+    await RoleModel.findOneAndUpdate(
+      { name: "Empleado" },
+      {
+        $set: {
+          description: "Acceso completo a módulos de compras y ventas",
+          permissions: EMPLEADO_PERMISSIONS,
+          isActive: true,
+        }
+      },
+      { upsert: true, returnDocument: 'after' }
+    );
 
-  console.log("Roles sembrados correctamente");
+    console.log("Roles sincronizados/sembrados correctamente");
+  } catch (error) {
+    console.error("Error al sincronizar roles:", error);
+  }
 };
