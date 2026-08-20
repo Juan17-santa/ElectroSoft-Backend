@@ -23,7 +23,7 @@ import {
 
 const router = Router();
 
-router.post("/", requireAuth, requirePermission("pagos:abonar"), createPayment);
+router.post("/", requireAuth, requirePermission("pagos:abonar", "ventas:abonar"), createPayment);
 router.get("/", requireAuth, requirePermission("pagos:acceso", "pagos:ver"), getPayments);
 router.get("/venta/:ventaId", requireAuth, requirePermission("pagos:ver"), getPaymentsByVenta);
 router.get("/:id", requireAuth, requirePermission("pagos:ver"), getPaymentById);
