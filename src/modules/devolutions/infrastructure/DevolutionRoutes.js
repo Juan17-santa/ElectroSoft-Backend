@@ -21,8 +21,8 @@ router.patch("/:id", requireAuth, requirePermission("devoluciones:editar"), upda
 router.patch("/:id/anular", requireAuth, requirePermission("devoluciones:anular"), anularDevolution);
 router.patch("/:id/confirm", requireAuth, requirePermission("devoluciones:editar"), confirmDevolution);
 router.get("/export", requireAuth, requirePermission("devoluciones:reporte"), exportDevolutions);
-router.get("/", requireAuth, requirePermission("devoluciones:ver"), getDevolutions);
-router.get("/sale/:saleId", requireAuth, requirePermission("devoluciones:ver"), getDevolutionsBySaleId);
+router.get("/", requireAuth, requirePermission("devoluciones:ver", "devoluciones:acceso", "dashboard:acceso"), getDevolutions);
+router.get("/sale/:saleId", requireAuth, requirePermission("devoluciones:ver", "devoluciones:acceso", "ventas:ver", "ventas:acceso"), getDevolutionsBySaleId);
 router.get("/:id", requireAuth, requirePermission("devoluciones:ver"), getDevolutionById);
 
 export default router;
