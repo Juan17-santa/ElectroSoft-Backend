@@ -15,13 +15,11 @@ export default class DeleteProviderUseCase {
 
     async execute(id) {
 
-        // Validar que el proveedor existe
         const provider = await this.providerRepository.findById(id);
         if (!provider) {
             throw new Error("El proveedor no existe");
         }
 
-        // Validar si tiene compras asociadas
         const comprasAsociadas = await this.shoppingRepository.findByProviderId(id);
 
         if (comprasAsociadas.length > 0) {
@@ -30,7 +28,6 @@ export default class DeleteProviderUseCase {
             );
         }
 
-        // Eliminar proveedor
         return await this.providerRepository.delete(id);
     }
 }

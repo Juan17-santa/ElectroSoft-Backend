@@ -12,18 +12,15 @@ export default class DeleteProductUseCase {
     }
 
     async execute(id) {
-        // Verificar que el producto existe
         const product = await this.productRepository.findById(id);
         if (!product) {
             throw new Error("El producto no existe");
         }
 
-        // Validar si el producto tiene ventas o pedidos asociados
         if (product.canDelete === false) {
             throw new Error("No se puede eliminar el producto porque tiene ventas o pedidos asociados. Solo puede desactivarse.");
         }
 
-        // Eliminar el producto
         return await this.productRepository.delete(id);
     }
 }

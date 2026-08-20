@@ -39,4 +39,7 @@ const providerSchema = new mongoose.Schema({
     timestamps: true
 });
 
+providerSchema.index({ createdAt: -1 });
+providerSchema.index({ categoriesAssociated: 1 });
+
 export const providerModel = mongoose.model("Provider", providerSchema);

@@ -15,13 +15,11 @@ export default class DeleteProductCategoryUseCase {
     }
 
     async execute(id) {
-        // Verificar que la categoría existe
         const category = await this.productCategoryRepository.findById(id);
         if (!category) {
             throw new Error("La categoría no existe");
         }
 
-        // Verificar que no tenga productos o proveedores asociados
         const products = await this.productRepository.findByCategoryId(id);
         const providers = await this.providerRepository.findByCategoryId(id);
 
@@ -37,7 +35,6 @@ export default class DeleteProductCategoryUseCase {
             throw new Error(mensaje);
         }
 
-        // Eliminar la categoría
         return await this.productCategoryRepository.delete(id);
     }
 }

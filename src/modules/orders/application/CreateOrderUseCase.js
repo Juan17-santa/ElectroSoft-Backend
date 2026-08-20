@@ -148,11 +148,10 @@ export default class CreateOrderUseCase {
         const clientName = clientExists ? ((clientExists.firstName || '') + ' ' + (clientExists.lastName || '')).trim() || "Desconocido" : "Desconocido";
         const formattedTotal = savedOrder.total.toLocaleString("es-CO");
 
-        // Emitir notificación
         await NotificationService.createNotification(
             "Nuevo Pedido Registrado",
             `Se ha registrado un nuevo pedido al cliente ${clientName} por $${formattedTotal}.`,
-            "SALE", // We can use SALE or introduce ORDER
+            "SALE",
             `/orders/${savedOrder._id}`
         );
 

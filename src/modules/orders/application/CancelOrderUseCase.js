@@ -35,14 +35,16 @@ export default class CancelOrderUseCase {
             throw new Error("Solo se puede cancelar un pedido que esté en estado Pendiente.");
         }
 
-        for (const item of order.products) {
-            await this.productRepository.updateStock(item.product, item.quantity);
+        const canceledOrder = await this.orderRepository.cancelAndRestoreStock(
+            id,
+            reason.trim(),
+            new Date(),
+        );
+
+        if (!canceledOrder) {
+            throw new Error("El pedido ya no está pendiente de cancelación.");
         }
 
-        return await this.orderRepository.update(id, {
-            status: "Anulado",
-            cancelReason: reason.trim(),
-            canceledAt: new Date(),
-        });
+        return canceledOrder;
     }
 }

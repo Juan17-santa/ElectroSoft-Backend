@@ -9,6 +9,7 @@
  */
 
 import ProductEntity from "../domain/ProductEntity.js";
+import mongoose from "mongoose";
 
 export default class CreateProductUseCase {
     constructor(productRepository, productCategoryRepository) {
@@ -19,19 +20,20 @@ export default class CreateProductUseCase {
     async execute(productData) {
         const { name, categoryId, price, stock, typeStock, serial, warranty, characteristics } = productData;
 
-        // Verificar que la categoría exista
+        if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+            throw new Error("La categoría seleccionada no es válida");
+        }
+
         const category = await this.productCategoryRepository.findById(categoryId);
         if (!category) {
             throw new Error("La categoría seleccionada no existe");
         }
 
-        // Verificar que el serial sea único
         const existingProduct = await this.productRepository.findBySerial(serial);
         if (existingProduct) {
             throw new Error("El serial ya existe en otro producto");
         }
 
-        // Crear la entidad (aquí se validan reglas de negocio)
         const product = new ProductEntity({
             name,
             categoryId,
@@ -43,7 +45,6 @@ export default class CreateProductUseCase {
             characteristics: characteristics || []
         });
 
-        // Guardar en base de datos
         return await this.productRepository.create(product);
     }
 }

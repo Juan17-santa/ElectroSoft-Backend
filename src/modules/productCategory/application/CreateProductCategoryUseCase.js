@@ -17,13 +17,11 @@ export default class CreateProductCategoryUseCase {
     async execute(categoryData) {
         const { id, name, description, status } = categoryData;
 
-        // Valida que el nuevo nombre no exista en otra categoria
         const existingCategory = await this.productCategoryRepository.findByName(name);
         if (existingCategory) {
             throw new Error("Esta categoría ya se encuentra registrada");
         }
 
-        // Crear la entidad (aquí se validan reglas)
         const category = new ProductCategoryEntity({
             id,
             name,
@@ -31,7 +29,6 @@ export default class CreateProductCategoryUseCase {
             status,
         });
 
-        // Guardar en base de datos
         return await this.productCategoryRepository.create(category);
     }
 }

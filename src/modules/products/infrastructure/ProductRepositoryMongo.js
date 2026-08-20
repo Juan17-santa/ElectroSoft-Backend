@@ -25,21 +25,50 @@ class ProductRepositoryMongo {
         return await product.save();
     }
 
-    async findAll() {
-        const products = await productModel.find()
+    async findAll({ page = 1, limit = 15, search = "", categoryId, status } = {}) {
+        const safePage = Math.max(1, Number(page) || 1);
+        const safeLimit = Math.min(100, Math.max(1, Number(limit) || 15));
+        const term = String(search || "").trim();
+        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const filter = {};
+
+        if (term) {
+            filter.$or = [
+                { name: { $regex: escapedTerm, $options: "i" } },
+                { serial: { $regex: escapedTerm, $options: "i" } },
+            ];
+        }
+
+        if (categoryId) filter.categoryId = categoryId;
+        if (status !== undefined && status !== "") {
+            filter.status = status === true || status === "true";
+        }
+
+        const total = await productModel.countDocuments(filter);
+        const products = await productModel.find(filter)
             .populate("categoryId", "name description status")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip((safePage - 1) * safeLimit)
+            .limit(safeLimit);
 
         const productIds = products.map(product => product._id);
         const associatedIds = await this.buildAssociatedProductIds(productIds);
 
-        return products.map(product => {
+        const items = products.map(product => {
             const item = product.toObject();
             return {
                 ...item,
                 canDelete: !associatedIds.has(item._id.toString())
             };
         });
+
+        return {
+            items,
+            total,
+            page: safePage,
+            limit: safeLimit,
+            totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+        };
     }
 
     async findById(id) {
@@ -68,7 +97,10 @@ class ProductRepositoryMongo {
     }
 
     async update(id, productData) {
-        return await productModel.findByIdAndUpdate(id, productData, { returnDocument: "after" }).populate("categoryId", "name description status");
+        return await productModel.findByIdAndUpdate(id, productData, {
+            returnDocument: "after",
+            runValidators: true,
+        }).populate("categoryId", "name description status");
     }
 
     async delete(id) {

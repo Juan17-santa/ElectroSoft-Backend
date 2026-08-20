@@ -29,6 +29,7 @@ import CreateProductCategoryUseCase from "../application/CreateProductCategoryUs
 import ProductCategoryRepositoryMongo from "./ProductCategoryRepositoryMongo.js";
 import ProviderRepositoryMongo from "../../providers/infrastructure/ProviderRepositoryMongo.js";
 import ProductRepositoryMongo from "../../products/infrastructure/ProductRepositoryMongo.js";
+import { sendControllerError } from "../../../infrastructure/middlewares/errorHandler.js";
 
 const productRepository = new ProductRepositoryMongo();
 const providerRepository = new ProviderRepositoryMongo();
@@ -40,23 +41,22 @@ export const createProductCategory = async (req, res) => {
         const result = await useCase.execute(req.body);
         res.status(201).json({ message: "Categoría registrada con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 }
 
 export const getProductCategory = async (req, res) => {
     try {
         const useCase = new GetProductCategoryUseCase(productCategoryRepository)
-        const result = await useCase.execute();
-        res.json({ data: result });
+        const result = await useCase.execute(req.query);
+        res.json({ data: result.items, ...result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendControllerError(res, error, 500);
     }
 }
 
 export const getProductCategoryById = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -66,13 +66,12 @@ export const getProductCategoryById = async (req, res) => {
         const result = await useCase.execute(req.params.id);
         res.json({ data: result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendControllerError(res, error, 500);
     }
 }
 
 export const updateProductCategory = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -82,13 +81,12 @@ export const updateProductCategory = async (req, res) => {
         const result = await useCase.execute(req.params.id, req.body);
         res.json({ message: "Categoría actualizada con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const deleteProductCategory = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -98,13 +96,12 @@ export const deleteProductCategory = async (req, res) => {
         const result = await useCase.execute(req.params.id);
         res.json({ message: "Categoría eliminada con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const changeStatusProductCategory = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -114,6 +111,6 @@ export const changeStatusProductCategory = async (req, res) => {
         const result = await useCase.execute(req.params.id);
         res.json({ message: "Estado de la categoría actualizada con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };

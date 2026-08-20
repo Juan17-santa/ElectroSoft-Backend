@@ -10,7 +10,7 @@ export default class GetProductCategoryUseCase {
     constructor (productCategoryRepository) {
         this.productCategoryRepository = productCategoryRepository
     }
-    async execute () {
-        return await this.productCategoryRepository.findAll()
+    async execute (query = {}) {
+        return await this.productCategoryRepository.findAll(query)
     }
 }

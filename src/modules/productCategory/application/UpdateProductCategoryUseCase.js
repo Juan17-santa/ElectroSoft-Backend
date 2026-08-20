@@ -18,13 +18,11 @@ export default class UpdateProductCategoryUseCase {
     async execute(id, productCategoryData) {
         const { name, description } = productCategoryData;
 
-        // Verifica si la categoria existe
         const existingCategory = await this.productCategoryRepository.findById(id);
         if (!existingCategory) {
             throw new Error("La categoría no existe");
         }
 
-        // Valida que el nuevo nombre no exista en otra categoria
         if (name && name !== existingCategory.name) {
             const exists = await this.productCategoryRepository.findByName(name);
             if (exists) {
@@ -32,7 +30,6 @@ export default class UpdateProductCategoryUseCase {
             }
         }
 
-        // Crear la entidad con los datos actualizados (aquí se validan reglas)
         const updatedCategory = new ProductCategoryEntity({
             id,
             name,
@@ -40,7 +37,6 @@ export default class UpdateProductCategoryUseCase {
             status: existingCategory.status
         });
 
-        // Actualizar en base de datos
         return await this.productCategoryRepository.update(id, updatedCategory);
     }
 }

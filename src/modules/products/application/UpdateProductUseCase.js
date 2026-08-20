@@ -12,6 +12,7 @@
  * - Actualizar el producto en la base de datos.
  */
 
+import mongoose from "mongoose";
 import ProductEntity from "../domain/ProductEntity.js";
 
 export default class UpdateProductUseCase {
@@ -23,21 +24,21 @@ export default class UpdateProductUseCase {
     async execute(id, productData) {
         const { name, categoryId, price, stock, typeStock, serial, warranty, characteristics } = productData;
 
-        // Verificar que el producto existe
         const existingProduct = await this.productRepository.findById(id);
         if (!existingProduct) {
             throw new Error("El producto no existe");
         }
 
-        // Verificar que la categoría exista
         if (categoryId) {
+            if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+                throw new Error("La categoría seleccionada no es válida");
+            }
             const category = await this.productCategoryRepository.findById(categoryId);
             if (!category) {
                 throw new Error("La categoría seleccionada no existe");
             }
         }
 
-        // Verificar que el serial sea único (si cambió)
         if (serial && serial !== existingProduct.serial) {
             const productWithSerial = await this.productRepository.findBySerial(serial);
             if (productWithSerial) {
@@ -45,19 +46,15 @@ export default class UpdateProductUseCase {
             }
         }
 
-        // Validar las características editadas
-        // Solo se permite: cambiar visible y eliminar. No editar textos.
         if (characteristics && Array.isArray(characteristics)) {
             const existingChars = existingProduct.characteristics || [];
 
             for (const newChar of characteristics) {
-                // Buscar si la característica ya existía (por _id)
                 const originalChar = existingChars.find(
                     c => c._id && newChar._id && c._id.toString() === newChar._id.toString()
                 );
 
                 if (originalChar) {
-                    // Si existe, verificar que no se editaron los textos
                     if (
                         originalChar.name !== newChar.name ||
                         originalChar.unit !== newChar.unit ||
@@ -69,7 +66,6 @@ export default class UpdateProductUseCase {
             }
         }
 
-        // Crear la entidad con los datos actualizados (aquí se validan reglas)
         const updatedProduct = new ProductEntity({
             id,
             name,
@@ -83,7 +79,6 @@ export default class UpdateProductUseCase {
             status: existingProduct.status
         });
 
-        // Actualizar en base de datos
         return await this.productRepository.update(id, {
             name: updatedProduct.name,
             categoryId: updatedProduct.categoryId,

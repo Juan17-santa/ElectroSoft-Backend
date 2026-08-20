@@ -11,8 +11,8 @@ export default class GetOrdersUseCase {
         this.orderRepository = orderRepository;
     }
 
-    async execute() {
+    async execute(query = {}) {
         await this.orderRepository.expirePendingOrders();
-        return await this.orderRepository.findAll();
+        return await this.orderRepository.findAll(query);
     }
 }

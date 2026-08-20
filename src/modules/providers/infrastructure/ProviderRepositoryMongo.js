@@ -23,11 +23,26 @@ class ProviderRepositoryMongo {
         return await provider.save();
     }
 
-    async findAll() {
-        const providers = await providerModel.find()
+    async findAll({ page = 1, limit = 15, search = "" } = {}) {
+        const safePage = Math.max(1, Number(page) || 1);
+        const safeLimit = Math.min(100, Math.max(1, Number(limit) || 15));
+        const term = String(search || "").trim();
+        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const filter = term
+            ? { $or: [
+                { providerName: { $regex: escapedTerm, $options: "i" } },
+                { document: { $regex: escapedTerm, $options: "i" } },
+                { providerEmail: { $regex: escapedTerm, $options: "i" } },
+                { providerType: { $regex: escapedTerm, $options: "i" } },
+            ] }
+            : {};
+        const total = await providerModel.countDocuments(filter);
+        const providers = await providerModel.find(filter)
             .populate("documentType")
             .populate("categoriesAssociated")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip((safePage - 1) * safeLimit)
+            .limit(safeLimit);
 
         const providersWithRelations = await Promise.all(
             providers.map(async (provider) => {
@@ -47,7 +62,13 @@ class ProviderRepositoryMongo {
                 };
             })
         );
-        return providersWithRelations;
+        return {
+            items: providersWithRelations,
+            total,
+            page: safePage,
+            limit: safeLimit,
+            totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+        };
     }
 
     async findById(id) {

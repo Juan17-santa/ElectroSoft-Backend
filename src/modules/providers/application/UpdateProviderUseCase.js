@@ -40,14 +40,12 @@ export default class UpdateProviderUseCase {
             throw new Error("El proveedor no existe")
         }
 
-        // Variable para determinar el nombre de contacto final, dependiendo del tipo de proveedor
         let finalContactName = contactName;
 
         if (providerType === "NATURAL") {
             finalContactName = providerName;
         }
 
-        // Validar entidad (campos obligatorios, formatos, etc)
         const updatedProvider = new ProviderEntity({
             id,
             providerType,
@@ -64,13 +62,11 @@ export default class UpdateProviderUseCase {
             status: existingProvider.status
         });
 
-        // Validar que el tipo de documento exista
         const docTypeExists = await this.documentTypeRepository.findById(documentType);
         if (!docTypeExists) {
             throw new Error("El tipo de documento no es válido");
         }
 
-        // Validar que el tipo de documento sea compatible con el tipo de proveedor
         if (
             providerType === "JURIDICA" &&
             docTypeExists.abbreviation !== "NIT"
@@ -78,7 +74,6 @@ export default class UpdateProviderUseCase {
             throw new Error("Las personas jurídicas solo pueden registrarse con NIT");
         }
 
-        // Validar documento unico (solo si cambia)
         if (document && document !== existingProvider.document) {
             const exists = await this.providerRepository.findByDocument(document);
             if (exists) {
@@ -105,7 +100,6 @@ export default class UpdateProviderUseCase {
             }
         }
 
-        // Validar que las categorias existen
         if (categoriesAssociated && categoriesAssociated.length > 0) {
 
             const invalidIds = categoriesAssociated.filter(
