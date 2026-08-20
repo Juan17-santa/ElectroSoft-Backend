@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import { productModel } from "../../products/infrastructure/ProductModel.js";
+import { ClientModel } from "../../clients/infrastructure/ClientModel.js";
 import { orderModel } from "./OrderModel.js";
 
 class OrderRepositoryMongo {
@@ -7,13 +9,45 @@ class OrderRepositoryMongo {
         return await order.save();
     }
 
-    async findAll() {
-        return await orderModel.find()
+    async findAll({ page = 1, limit = 15, search = "" } = {}) {
+        const safePage = Math.max(1, Number(page) || 1);
+        const safeLimit = Math.min(100, Math.max(1, Number(limit) || 15));
+        const term = String(search || "").trim();
+        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const filter = term
+            ? { $or: [
+                { documentNumber: { $regex: escapedTerm, $options: "i" } },
+                { status: { $regex: escapedTerm, $options: "i" } },
+            ] }
+            : {};
+
+        if (term) {
+            const clientIds = await ClientModel.find({
+                $or: [
+                    { firstName: { $regex: escapedTerm, $options: "i" } },
+                    { lastName: { $regex: escapedTerm, $options: "i" } },
+                ],
+            }).distinct("_id");
+            filter.$or.push({ client: { $in: clientIds } });
+        }
+
+        const total = await orderModel.countDocuments(filter);
+        const orders = await orderModel.find(filter)
             .populate({
                 path: "client",
                 populate: { path: "documentType" }
             })
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip((safePage - 1) * safeLimit)
+            .limit(safeLimit);
+
+        return {
+            items: orders,
+            total,
+            page: safePage,
+            limit: safeLimit,
+            totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+        };
     }
 
     async findById(id) {
@@ -37,54 +71,85 @@ class OrderRepositoryMongo {
 
     async expirePendingOrders() {
         const now = new Date();
+        let processed = 0;
 
-        const expiredOrders = await orderModel.find({
-            status: "Pendiente",
-            dueDate: { $lt: now }
-        });
+        while (true) {
+            const expiredOrder = await orderModel.findOne({
+                status: "Pendiente",
+                dueDate: { $lt: now },
+            }).select("_id").sort({ dueDate: 1 });
 
-        if (expiredOrders.length === 0) return;
+            if (!expiredOrder) return { modifiedCount: processed };
 
-        const stockPromises = expiredOrders.flatMap(order =>
-            (order.products || []).map(item =>
-                productModel.findByIdAndUpdate(item.product, {
-                    $inc: { stock: item.quantity }
-                })
-            )
-        );
-
-        await Promise.all(stockPromises);
-
-        return await orderModel.updateMany(
-            { status: "Pendiente", dueDate: { $lt: now } },
-            {
-                $set: {
-                    status: "Anulado",
-                    cancelReason: "Pedido anulado automáticamente por vencimiento de fecha.",
-                    canceledAt: now
-                }
-            }
-        );
+            const updated = await this.expireSingleOrder(expiredOrder._id, now);
+            if (updated) processed += 1;
+        }
     }
 
-    async expireSingleOrder(order) {
-        if (!order) return null;
+    async expireSingleOrder(id, now = new Date()) {
+        const session = await mongoose.startSession();
+        let updatedOrder = null;
 
-        const now = new Date();
+        try {
+            await session.withTransaction(async () => {
+                const order = await orderModel.findOneAndUpdate(
+                    { _id: id, status: "Pendiente", dueDate: { $lt: now } },
+                    {
+                        $set: {
+                            status: "Anulado",
+                            cancelReason: "Pedido anulado automáticamente por vencimiento de fecha.",
+                            canceledAt: now,
+                        },
+                    },
+                    { returnDocument: "after", runValidators: true, session },
+                );
 
-        const stockPromises = (order.products || []).map(item =>
-            productModel.findByIdAndUpdate(item.product, {
-                $inc: { stock: item.quantity }
-            })
-        );
+                if (!order) return;
 
-        await Promise.all(stockPromises);
+                for (const item of order.products || []) {
+                    const product = await productModel.findByIdAndUpdate(
+                        item.product,
+                        { $inc: { stock: item.quantity } },
+                        { session, returnDocument: "after" },
+                    );
+                    if (!product) throw new Error(`Producto no encontrado: ${item.product}`);
+                }
+                updatedOrder = order;
+            });
+            return updatedOrder;
+        } finally {
+            await session.endSession();
+        }
+    }
 
-        order.status = "Anulado";
-        order.cancelReason = "Pedido anulado automáticamente por vencimiento de fecha.";
-        order.canceledAt = now;
+    async cancelAndRestoreStock(id, reason, now = new Date()) {
+        const session = await mongoose.startSession();
+        let updatedOrder = null;
 
-        return await order.save();
+        try {
+            await session.withTransaction(async () => {
+                const order = await orderModel.findOneAndUpdate(
+                    { _id: id, status: "Pendiente" },
+                    { $set: { status: "Anulado", cancelReason: reason, canceledAt: now } },
+                    { returnDocument: "after", runValidators: true, session },
+                );
+
+                if (!order) return;
+
+                for (const item of order.products || []) {
+                    const product = await productModel.findByIdAndUpdate(
+                        item.product,
+                        { $inc: { stock: item.quantity } },
+                        { session, returnDocument: "after" },
+                    );
+                    if (!product) throw new Error(`Producto no encontrado: ${item.product}`);
+                }
+                updatedOrder = order;
+            });
+            return updatedOrder;
+        } finally {
+            await session.endSession();
+        }
     }
 }
 

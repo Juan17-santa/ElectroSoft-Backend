@@ -11,7 +11,7 @@ export default class GetProductsUseCase {
         this.productRepository = productRepository;
     }
 
-    async execute() {
-        return await this.productRepository.findAll();
+    async execute(query = {}) {
+        return await this.productRepository.findAll(query);
     }
 }

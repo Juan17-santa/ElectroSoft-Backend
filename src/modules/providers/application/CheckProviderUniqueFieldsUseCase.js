@@ -4,10 +4,8 @@ export default class CheckProviderUniqueFieldsUseCase {
     }
 
     async execute({ _id, document, providerEmail, contactEmail }) {
-
         if (document) {
             const provider = await this.providerRepository.findByDocument(document);
-
             if (provider && provider._id.toString() !== _id) {
                 return {
                     exists: true,
@@ -23,7 +21,6 @@ export default class CheckProviderUniqueFieldsUseCase {
 
         if (providerEmail) {
             const provider = await this.providerRepository.findByEmail(providerEmail);
-
             if (provider && provider._id.toString() !== _id) {
                 return {
                     exists: true,
@@ -39,7 +36,6 @@ export default class CheckProviderUniqueFieldsUseCase {
 
         if (contactEmail) {
             const provider = await this.providerRepository.findByContactEmail(contactEmail);
-
             if (provider && provider._id.toString() !== _id) {
                 return {
                     exists: true,

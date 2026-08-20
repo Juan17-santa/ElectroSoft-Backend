@@ -24,10 +24,22 @@ class ProductCategoryRepositoryMongo {
         return await category.save();
     }
 
-    async findAll() {
+    async findAll({ page = 1, limit = 15, search = "" } = {}) {
+        const safePage = Math.max(1, Number(page) || 1);
+        const safeLimit = Math.min(100, Math.max(1, Number(limit) || 15));
+        const term = String(search || "").trim();
+        const filter = term
+            ? { $or: [
+                { name: { $regex: term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } },
+                { description: { $regex: term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } },
+            ] }
+            : {};
+        const total = await productCategoryModel.countDocuments(filter);
         const categories = await productCategoryModel
-            .find()
-            .sort({ createdAt: -1 });
+            .find(filter)
+            .sort({ createdAt: -1 })
+            .skip((safePage - 1) * safeLimit)
+            .limit(safeLimit);
 
         const categoriesWithRelations = await Promise.all(
             categories.map(async (category) => {
@@ -56,7 +68,13 @@ class ProductCategoryRepositoryMongo {
                 };
             })
         );
-        return categoriesWithRelations;
+        return {
+            items: categoriesWithRelations,
+            total,
+            page: safePage,
+            limit: safeLimit,
+            totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+        };
     }
 
     async findById(id) {
@@ -91,7 +109,10 @@ class ProductCategoryRepositoryMongo {
     }
 
     async update(id, categoryData) {
-        return await productCategoryModel.findByIdAndUpdate(id, categoryData, { returnDocument: "after" });
+        return await productCategoryModel.findByIdAndUpdate(id, categoryData, {
+            returnDocument: "after",
+            runValidators: true,
+        });
     }
 
     async delete(id) {

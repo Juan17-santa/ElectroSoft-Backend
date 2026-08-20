@@ -13,17 +13,14 @@ export default class ChangeStatusProductUseCase {
     }
 
     async execute(id) {
-        // Verificar que el producto existe
         const product = await this.productRepository.findById(id);
 
         if (!product) {
             throw new Error("El producto no existe");
         }
 
-        // Cambiar el estado (si estaba activo, se desactiva y viceversa)
         const newStatus = !product.status;
 
-        // Actualizar en base de datos
         return await this.productRepository.update(id, {
             status: newStatus
         });

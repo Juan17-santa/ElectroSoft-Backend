@@ -153,11 +153,18 @@ La estructura del archivo debe ser la siguiente:
 ```env
 PORT=4000
 
+CLIENT_ORIGIN=http://localhost:3000
+
 MONGODB_URI=mongodb+srv://usuario:contraseña@cluster.mongodb.net/electrosoft
 
 JWT_SECRET=123456789abcdeft
 
 JWT_EXPIRES_IN=2h
+
+DEFAULT_ADMIN_NAME=Administrador del Sistema
+DEFAULT_ADMIN_EMAIL=admin@example.com
+DEFAULT_ADMIN_PASSWORD=use-a-secret-password
+DEFAULT_ADMIN_ROLE=Administrador
 ```
 
 ## Descripción de cada variable
@@ -168,6 +175,11 @@ JWT_EXPIRES_IN=2h
 | `MONGODB_URI`    | Cadena de conexión de MongoDB Atlas.                 |
 | `JWT_SECRET`     | Clave utilizada para firmar los tokens JWT.          |
 | `JWT_EXPIRES_IN` | Tiempo de expiración de los tokens de autenticación. |
+| `CLIENT_ORIGIN` | Origen permitido para la API y Socket.IO. Puede contener varios orígenes separados por comas. |
+| `DEFAULT_ADMIN_NAME` | Nombre del usuario administrador inicial. |
+| `DEFAULT_ADMIN_EMAIL` | Correo del usuario administrador inicial. |
+| `DEFAULT_ADMIN_PASSWORD` | Contraseña del usuario administrador inicial. |
+| `DEFAULT_ADMIN_ROLE` | Nombre del rol asignado al usuario administrador inicial. |
 
 > **Importante:** Reemplace el valor de `MONGODB_URI` por la cadena de conexión obtenida previamente desde MongoDB Atlas.
 

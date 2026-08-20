@@ -13,17 +13,14 @@ export default class ChangeStatusProductCategoryUseCase {
     }
 
     async execute(id) {
-        // Verificar que la categoría existe
         const category = await this.productCategoryRepository.findById(id);
 
         if (!category) {
             throw new Error("La categoría no existe");
         }
 
-        // Cambiar el estado (si estaba activo, se desactiva y viceversa)
         const newStatus = !category.status;
 
-        // Actualizar en base de datos
         return await this.productCategoryRepository.update(id, {
             status: newStatus
         });

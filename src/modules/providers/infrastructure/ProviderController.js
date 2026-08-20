@@ -31,6 +31,7 @@ import DocumentTypeRepositoryMongo from "../../../shared/infrastructure/reposito
 import ProductCategoryRepositoryMongo from "../../productCategory/infrastructure/ProductCategoryRepositoryMongo.js"
 import ShoppingRepositoryMongo from "../../shopping/infrastructure/ShoppingRepositoryMongo.js";
 import CheckProviderUniqueFieldsUseCase from "../application/CheckProviderUniqueFieldsUseCase.js";
+import { sendControllerError } from "../../../infrastructure/middlewares/errorHandler.js";
 
 const shoppingRepository = new ShoppingRepositoryMongo();
 const providerRepository = new ProviderRepositoryMongo();
@@ -43,7 +44,7 @@ export const createProvider = async (req, res) => {
         const result = await useCase.execute(req.body);
         res.status(201).json({ message: "Proveedor registrado con éxito.", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 }
 
@@ -53,25 +54,22 @@ export const checkProviderUnique = async (req, res) => {
         const result = await useCase.execute(req.body);
         res.json(result);
     } catch (error) {
-        res.status(400).json({
-            error: error.message
-        });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const getProviders = async (req, res) => {
     try {
         const useCase = new GetProvidersUseCase(providerRepository)
-        const result = await useCase.execute();
-        res.json({ data: result });
+        const result = await useCase.execute(req.query);
+        res.json({ data: result.items, ...result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendControllerError(res, error, 500);
     }
 }
 
 export const getProviderById = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -81,13 +79,12 @@ export const getProviderById = async (req, res) => {
         const result = await useCase.execute(req.params.id);
         res.json({ data: result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendControllerError(res, error, 500);
     }
 }
 
 export const updateProvider = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -97,13 +94,12 @@ export const updateProvider = async (req, res) => {
         const result = await useCase.execute(req.params.id, req.body);
         res.json({ message: "Proveedor actualizado con éxito.", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const deleteProvider = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -112,13 +108,12 @@ export const deleteProvider = async (req, res) => {
         const result = await useCase.execute(req.params.id);
         res.json({ message: "El proveedor ha sido eliminado con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const changeStatusProvider = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -128,6 +123,6 @@ export const changeStatusProvider = async (req, res) => {
         const result = await useCase.execute(req.params.id);
         res.json({ message: "Estado del proveedor actualizado con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };

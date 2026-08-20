@@ -24,6 +24,7 @@ import CreateSaleUseCase from "../../sales/application/CreateSaleUseCase.js";
 import SaleRepositoryMongo from "../../sales/infrastructure/SaleRepositoryMongo.js";
 import SaleExternalCatalogGatewayMongo from "../../sales/infrastructure/SaleExternalCatalogGatewayMongo.js";
 import SaleTransactionManagerMongo from "../../sales/infrastructure/SaleTransactionManagerMongo.js";
+import { sendControllerError } from "../../../infrastructure/middlewares/errorHandler.js";
 
 const orderRepository = new OrderRepositoryMongo();
 const clientRepositoryInstance = clientRepository;
@@ -43,17 +44,17 @@ export const createOrder = async (req, res) => {
         const result = await useCase.execute(req.body);
         res.status(201).json({ message: "Pedido creado con éxito.", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const getOrders = async (req, res) => {
     try {
         const useCase = new GetOrdersUseCase(orderRepository);
-        const result = await useCase.execute();
-        res.json({ data: result });
+        const result = await useCase.execute(req.query);
+        res.json({ data: result.items, ...result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendControllerError(res, error, 500);
     }
 };
 
@@ -68,7 +69,7 @@ export const getOrderById = async (req, res) => {
         const result = await useCase.execute(id);
         res.json({ data: result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendControllerError(res, error, 500);
     }
 };
 
@@ -82,7 +83,7 @@ export const cancelOrder = async (req, res) => {
 
         res.json({ message: "Pedido anulado con éxito.", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
@@ -98,6 +99,6 @@ export const confirmOrder = async (req, res) => {
 
         res.json({ message: "Pedido confirmado, convertido en venta y eliminado de orders.", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };

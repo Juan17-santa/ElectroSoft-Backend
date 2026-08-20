@@ -6,8 +6,11 @@ import { seedDocumentTypes } from "../shared/infrastructure/seeds/DocumentTypeSe
 import { seedRoles } from "../modules/roles/infrastructure/RoleSeed.js";
 import { initSocket } from "../config/socket.js";
 import { seedAdminUser } from "../modules/users/infrastructure/UserSeed.js";
+import { validateEnvironment } from "../config/environment.js";
 
 const PORT = process.env.PORT || 4000;
+
+validateEnvironment();
 
 connectDB().then(async () => {
 

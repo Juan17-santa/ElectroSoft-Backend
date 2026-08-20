@@ -44,8 +44,6 @@ export const seedRoles = async () => {
       },
       { upsert: true, returnDocument: 'after' }
     );
-
-    console.log("Roles sincronizados/sembrados correctamente");
   } catch (error) {
     console.error("Error al sincronizar roles:", error);
   }

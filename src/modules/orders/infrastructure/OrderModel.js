@@ -61,4 +61,9 @@ const orderSchema = new mongoose.Schema({
     canceledAt: { type: Date, default: null }
 }, { timestamps: true });
 
+orderSchema.index({ status: 1, dueDate: 1 });
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ documentNumber: 1 });
+orderSchema.index({ client: 1 });
+
 export const orderModel = mongoose.model("Order", orderSchema);

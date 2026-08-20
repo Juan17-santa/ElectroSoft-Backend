@@ -13,17 +13,14 @@ export default class ChangeStatusProviderUseCase {
     }
 
     async execute(id) {
-        // Verificar que el proveedor existe
         const provider = await this.providerRepository.findById(id);
 
         if (!provider) {
             throw new Error("El proveedor no existe");
         }
 
-        // Cambiar el estado (si estaba activo, se desactiva y viceversa)
         const newStatus = !provider.status;
 
-        // Actualizar en base de datos
         return await this.providerRepository.update(id, {
             status: newStatus
         });

@@ -36,7 +36,6 @@ export default class CreateProviderUseCase {
             status
         } = providerData;
 
-        // Variable para determinar el nombre de contacto final, dependiendo del tipo de proveedor
         let finalContactName = contactName;
 
         if (providerType === "NATURAL") {
@@ -59,7 +58,6 @@ export default class CreateProviderUseCase {
             status
         });
 
-        // Validar que el tipo de documento exista
         const docTypeExists = await this.documentTypeRepository.findById(documentType);
         if (!docTypeExists) {
             throw new Error("El tipo de documento no es válido");
@@ -72,7 +70,6 @@ export default class CreateProviderUseCase {
             throw new Error("Las personas jurídicas solo pueden registrarse con NIT");
         }
 
-        // Validar que el documento no exista
         const docExists = await this.providerRepository.findByDocument(document);
         if (docExists) {
             throw new Error("Este documento ya se encuentra registrado")
@@ -91,11 +88,9 @@ export default class CreateProviderUseCase {
             }
         }
 
-        // Validar que las categorias existen
         if (categoriesAssociated && categoriesAssociated.length > 0) {
             const categories = await this.productCategoryRepository.findByIds(categoriesAssociated);
 
-            // Validacion, ej: si se mandan 5 categorias y solo existen 4, muestra error por la que falta
             if (categories.length !== categoriesAssociated.length) {
                 throw new Error("Una o más categorías no son válidas");
             }

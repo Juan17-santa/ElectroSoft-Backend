@@ -37,7 +37,6 @@ export default class ConfirmOrderUseCase {
             throw new Error("Solo se pueden confirmar pedidos en estado Pendiente");
         }
 
-        // Devolver el stock reservado por el pedido ya que la venta se encargará de descontarlo nuevamente
         const revertedProducts = [];
         try {
             for (const item of order.products) {
@@ -48,7 +47,6 @@ export default class ConfirmOrderUseCase {
                 }
             }
         } catch (err) {
-            // Si falla devolver stock, abortamos la confirmación
             throw new Error(`Error al devolver stock antes de confirmar pedido: ${err.message}`);
         }
 

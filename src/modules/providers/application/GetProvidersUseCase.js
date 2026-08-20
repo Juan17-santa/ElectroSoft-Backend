@@ -10,7 +10,7 @@ export default class GetProvidersUseCase {
     constructor (providerRepository) {
         this.providerRepository = providerRepository
     }
-    async execute () {
-        return await this.providerRepository.findAll()
+    async execute (query = {}) {
+        return await this.providerRepository.findAll(query)
     }
 }

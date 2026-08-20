@@ -16,10 +16,18 @@ import roleRouter from "./modules/roles/infrastructure/RoleRoutes.js";
 import saleRouter from "./modules/sales/infrastructure/SaleRoutes.js";
 import paymentRouter from "./modules/payments/infrastructure/PaymentRoutes.js";
 import notificationRouter from "./modules/notifications/infrastructure/NotificationRoutes.js";
+import { errorHandler } from "./infrastructure/middlewares/errorHandler.js";
 
 const app = express();
 
-app.use(cors());
+const configuredOrigins = process.env.CLIENT_ORIGIN
+    ?.split(",")
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+app.use(cors({
+    origin: configuredOrigins?.length ? configuredOrigins : true,
+}));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use((req, _res, next) => {
@@ -45,5 +53,7 @@ app.use("/api/roles", roleRouter);
 app.use("/api/sales", saleRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/notifications", notificationRouter);
+
+app.use(errorHandler);
 
 export default app;

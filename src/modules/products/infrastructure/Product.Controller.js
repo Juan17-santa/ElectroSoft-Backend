@@ -28,6 +28,7 @@ import DeleteProductUseCase from "../application/DeleteProductUseCase.js";
 import ChangeStatusProductUseCase from "../application/ChangeStatusProductUseCase.js";
 import ProductRepositoryMongo from "./ProductRepositoryMongo.js";
 import ProductCategoryRepositoryMongo from "../../productCategory/infrastructure/ProductCategoryRepositoryMongo.js";
+import { sendControllerError } from "../../../infrastructure/middlewares/errorHandler.js";
 
 const productRepository = new ProductRepositoryMongo();
 const productCategoryRepository = new ProductCategoryRepositoryMongo();
@@ -38,23 +39,34 @@ export const createProduct = async (req, res) => {
         const result = await useCase.execute(req.body);
         res.status(201).json({ message: "Producto registrado con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const getProducts = async (req, res) => {
     try {
+        if (req.query.categoryId && !mongoose.Types.ObjectId.isValid(req.query.categoryId)) {
+            return res.status(400).json({ error: "ID de categoría inválido" });
+        }
+
+        if (
+            req.query.status !== undefined &&
+            req.query.status !== "true" &&
+            req.query.status !== "false"
+        ) {
+            return res.status(400).json({ error: "El estado debe ser true o false" });
+        }
+
         const useCase = new GetProductsUseCase(productRepository);
-        const result = await useCase.execute();
-        res.json({ data: result });
+        const result = await useCase.execute(req.query);
+        res.json({ data: result.items, ...result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendControllerError(res, error, 500);
     }
 };
 
 export const getProductById = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -64,13 +76,12 @@ export const getProductById = async (req, res) => {
         const result = await useCase.execute(req.params.id);
         res.json({ data: result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        sendControllerError(res, error, 500);
     }
 };
 
 export const updateProduct = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -80,13 +91,12 @@ export const updateProduct = async (req, res) => {
         const result = await useCase.execute(req.params.id, req.body);
         res.json({ message: "Producto actualizado con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const deleteProduct = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -96,13 +106,12 @@ export const deleteProduct = async (req, res) => {
         const result = await useCase.execute(req.params.id);
         res.json({ message: "Producto eliminado con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
 
 export const changeStatusProduct = async (req, res) => {
     try {
-        // Validar que el ID sea un ObjectId válido
         const { id } = req.params;
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "ID inválido" });
@@ -112,6 +121,6 @@ export const changeStatusProduct = async (req, res) => {
         const result = await useCase.execute(req.params.id);
         res.json({ message: "Estado del producto actualizado con éxito", data: result });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendControllerError(res, error, 400);
     }
 };
