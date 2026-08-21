@@ -22,14 +22,16 @@ import GetPaymentByIdUseCase from "../application/GetPaymentByIdUseCase.js";
 import CancelPaymentUseCase from "../application/CancelPaymentUseCase.js";
 import PaymentRepositoryMongo from "./PaymentRepositoryMongo.js";
 import PaymentSaleGatewayMongo from "./PaymentSaleGatewayMongo.js";
+import PaymentTransactionManagerMongo from "./PaymentTransactionManagerMongo.js";
 
 const paymentRepository = new PaymentRepositoryMongo();
 const saleGateway = new PaymentSaleGatewayMongo();
+const transactionManager = new PaymentTransactionManagerMongo();
 
 // Registra un nuevo pago / abono sobre una venta
 export const createPayment = async (req, res) => {
     try {
-        const useCase = new CreatePaymentUseCase(paymentRepository, saleGateway);
+        const useCase = new CreatePaymentUseCase(paymentRepository, saleGateway, transactionManager);
         const result = await useCase.execute(req.body);
 
         res.status(201).json({
@@ -44,10 +46,12 @@ export const createPayment = async (req, res) => {
 // Lista todos los pagos del sistema
 export const getPayments = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 0;
         const useCase = new GetPaymentsUseCase(paymentRepository);
-        const result = await useCase.execute();
+        const result = await useCase.execute({ page, limit });
 
-        res.json({ data: result });
+        res.json({ data: result.data || result, pagination: result.data ? { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages } : undefined });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

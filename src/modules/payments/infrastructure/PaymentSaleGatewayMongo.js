@@ -12,13 +12,14 @@
 import { saleModel } from "../../sales/infrastructure/SaleModel.js";
 
 export default class PaymentSaleGatewayMongo {
-    async findSaleById(ventaId) {
+    async findSaleById(ventaId, session = null) {
         return await saleModel
             .findById(ventaId)
-            .populate("clienteId", "firstName lastName documentNumber");
+            .populate("clienteId", "firstName lastName documentNumber")
+            .session(session);
     }
 
-    async updateSale(ventaId, data) {
-        return await saleModel.findByIdAndUpdate(ventaId, data, { new: true });
+    async updateSale(ventaId, data, session = null) {
+        return await saleModel.findByIdAndUpdate(ventaId, data, { new: true, session });
     }
 }

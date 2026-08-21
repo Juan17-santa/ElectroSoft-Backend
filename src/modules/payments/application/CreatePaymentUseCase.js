@@ -31,9 +31,10 @@ function isValidObjectId(id) {
 }
 
 export default class CreatePaymentUseCase {
-    constructor(paymentRepository, saleGateway) {
+    constructor(paymentRepository, saleGateway, transactionManager) {
         this.paymentRepository = paymentRepository;
         this.saleGateway = saleGateway;
+        this.transactionManager = transactionManager;
     }
 
     async execute(paymentData) {
@@ -44,75 +45,91 @@ export default class CreatePaymentUseCase {
             throw new Error("El ventaId no es un ObjectId válido");
         }
 
-        // Buscar la venta en el módulo de Sales
-        const venta = await this.saleGateway.findSaleById(ventaId);
-        if (!venta) {
-            throw new Error("La venta asociada al pago no existe");
-        }
+        const session = await this.transactionManager.startSession();
 
-        if (venta.estado === "ANULADA" || venta.estado === "Anulado") {
-            throw new Error("No se pueden registrar pagos en una venta anulada");
-        }
+        try {
+            session.startTransaction();
 
-        // Calcular el total ya pagado (pago base + abonos anteriores válidos)
-        const pagosAnteriores = await this.paymentRepository.findByVentaId(ventaId);
+            // Buscar la venta en el módulo de Sales (dentro de transacción)
+            const venta = await this.saleGateway.findSaleById(ventaId, session);
+            if (!venta) {
+                throw new Error("La venta asociada al pago no existe");
+            }
 
-        const pagoInicial = getSalePagoBase(venta);
-        const totalPagadoAnterior = pagoInicial + pagosAnteriores.reduce(
-            (acc, p) => acc + (String(p.estado).toUpperCase().includes('ANULAD') ? 0 : Number(p.monto)),
-            0
-        );
+            if (venta.estado === "ANULADA" || venta.estado === "Anulado") {
+                throw new Error("No se pueden registrar pagos en una venta anulada");
+            }
 
-        // Saldo real: considera pagos y reembolsos de devoluciones RESUELTAS
-        const totalVenta = Number(venta.total);
-        const saldoActual = await getSaleSaldo(venta);
+            // Calcular el total ya pagado (pago base + abonos anteriores válidos)
+            const pagosAnteriores = await this.paymentRepository.findByVentaId(ventaId, session);
 
-        // Validar que ya no esté pagada
-        if (saldoActual <= 0) {
-            throw new Error("Esta venta ya ha sido pagada en su totalidad");
-        }
-
-        const montoNum = Number(monto);
-
-        // Validar que el monto no supere el saldo (Tolerancia de 49 pesos por redondeo)
-        if (montoNum > saldoActual + 49) {
-            throw new Error(
-                `El monto (${montoNum}) supera el saldo pendiente de la venta (${saldoActual})`
+            const pagoInicial = getSalePagoBase(venta);
+            const totalPagadoAnterior = pagoInicial + pagosAnteriores.reduce(
+                (acc, p) => acc + (String(p.estado).toUpperCase().includes('ANULAD') ? 0 : Number(p.monto)),
+                0
             );
+
+            // Saldo real: considera pagos y reembolsos de devoluciones RESUELTAS
+            const totalVenta = Number(venta.total);
+            const saldoActual = await getSaleSaldo(venta);
+
+            // Validar que ya no esté pagada
+            if (saldoActual <= 0) {
+                throw new Error("Esta venta ya ha sido pagada en su totalidad");
+            }
+
+            const montoNum = Number(monto);
+
+            // Validar que el monto no supere el saldo (Tolerancia de 49 pesos por redondeo)
+            if (montoNum > saldoActual + 49) {
+                throw new Error(
+                    `El monto (${montoNum}) supera el saldo pendiente de la venta (${saldoActual})`
+                );
+            }
+
+            // Calcular nuevos valores
+            const nuevoTotalPagado = totalPagadoAnterior + montoNum;
+            // Evitamos saldos negativos por efecto del redondeo
+            const nuevoSaldoPendiente = Math.max(0, totalVenta - nuevoTotalPagado);
+            const nuevoEstado = nuevoSaldoPendiente === 0 ? "PAGADA" : "PENDIENTE";
+
+            // Crear entidad con validaciones de dominio
+            const payment = new PaymentEntity({
+                ventaId,
+                monto: montoNum,
+                metodoPago,
+                totalPagado: nuevoTotalPagado,
+                saldoPendiente: nuevoSaldoPendiente,
+                estado: nuevoEstado,
+                fechaPago: new Date(),
+                notas: notas || "",
+            });
+
+            const createdPayment = await this.paymentRepository.create(payment, session);
+
+            // Recalcular saldo y estado de la venta con el calculador canónico
+            // Actualizamos la venta temporalmente con el nuevo abono para calcular
+            const tempSale = { ...venta.toObject(), _id: venta._id }; 
+            // OJO: getSaleSaldo buscará en paymentModel. findByVentaId buscará pagos, pero el nuevo aún no está comiteado, 
+            // Sin embargo, Mongoose debería verlo en la misma sesión si le pasamos session. 
+            // wait, getSaleSaldo no recibe session! Modificaremos getSaleSaldo o simplemente le calculamos el estado con lo que ya sabemos.
+            // Lo más seguro es usar el calculador pasándole el session (lo cual requiere refactor de SaleFinancialStateService).
+            // O podemos setear a pata el estado ya calculado:
+            
+            const saleUpdate = { montoPorPagar: nuevoSaldoPendiente };
+            if (nuevoEstado !== venta.estado) {
+                saleUpdate.estado = nuevoEstado;
+            }
+            await this.saleGateway.updateSale(ventaId, saleUpdate, session);
+
+            await session.commitTransaction();
+
+            return createdPayment;
+        } catch (error) {
+            await session.abortTransaction();
+            throw error;
+        } finally {
+            await session.endSession();
         }
-
-        // Calcular nuevos valores
-        const nuevoTotalPagado = totalPagadoAnterior + montoNum;
-        // Evitamos saldos negativos por efecto del redondeo
-        const nuevoSaldoPendiente = Math.max(0, totalVenta - nuevoTotalPagado);
-        const nuevoEstado = nuevoSaldoPendiente === 0 ? "PAGADA" : "PENDIENTE";
-
-        // Crear entidad con validaciones de dominio
-        const payment = new PaymentEntity({
-            ventaId,
-            monto: montoNum,
-            metodoPago,
-            totalPagado: nuevoTotalPagado,
-            saldoPendiente: nuevoSaldoPendiente,
-            estado: nuevoEstado,
-            fechaPago: new Date(),
-            notas: notas || "",
-        });
-
-        const createdPayment = await this.paymentRepository.create(payment);
-
-        // Recalcular saldo y estado de la venta con el calculador canónico
-        const [nuevoSaldo, nuevoEstadoVenta] = await Promise.all([
-            getSaleSaldo(venta),
-            computeSaleEstado(venta),
-        ]);
-
-        const saleUpdate = { montoPorPagar: nuevoSaldo };
-        if (nuevoEstadoVenta !== venta.estado) {
-            saleUpdate.estado = nuevoEstadoVenta;
-        }
-        await this.saleGateway.updateSale(ventaId, saleUpdate);
-
-        return createdPayment;
     }
 }

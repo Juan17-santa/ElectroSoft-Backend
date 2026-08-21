@@ -16,8 +16,18 @@
 import mongoose from "mongoose";
 import { saleModel } from "./SaleModel.js";
 import { getRefundsBySaleIds } from "./SaleFinancialStateService.js";
+import { CounterModel } from "./CounterModel.js";
 
 export default class SaleRepositoryMongo {
+    async getNextInvoiceNumber(session = null) {
+        const counter = await CounterModel.findByIdAndUpdate(
+            "numeroFactura",
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true, session }
+        );
+        return String(counter.seq).padStart(2, '0');
+    }
+
     async create(data, session) {
         const [sale] = await saleModel.create([data], { session });
         return sale;
@@ -52,9 +62,8 @@ export default class SaleRepositoryMongo {
         });
     }
 
-    async findAll() {
-        const sales = await saleModel
-            .find()
+    async findAll({ page = 1, limit = 0 } = {}) {
+        const query = saleModel.find()
             .populate({
                 path: "clienteId",
                 select: "firstName lastName documentType documentNumber email phone",
@@ -64,7 +73,32 @@ export default class SaleRepositoryMongo {
             .sort({ fechaCreacion: -1 })
             .lean();
 
-        return enrichSalesWithPayments(sales);
+        let sales;
+        let total;
+        let totalPages = 1;
+
+        if (limit > 0) {
+            const skip = (page - 1) * limit;
+            [sales, total] = await Promise.all([
+                query.skip(skip).limit(limit).exec(),
+                saleModel.countDocuments()
+            ]);
+            totalPages = Math.ceil(total / limit);
+        } else {
+            sales = await query.exec();
+            total = sales.length;
+            limit = sales.length;
+        }
+
+        const enrichedSales = await enrichSalesWithPayments(sales);
+
+        return {
+            data: enrichedSales,
+            total,
+            page,
+            limit,
+            totalPages
+        };
     }
 
     async findByIds(ids) {

@@ -26,8 +26,10 @@ export const createClient = async (req, res) => {
 
 export const getClients = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 0;
         const useCase = new GetClientsUseCase(clientRepository);
-        const clients = await useCase.execute();
+        const clients = await useCase.execute({ page, limit });
         res.status(200).json(clients);
     } catch (error) {
         res.status(500).json({ error: error.message });
