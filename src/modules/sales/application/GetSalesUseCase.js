@@ -10,7 +10,7 @@ export default class GetSalesUseCase {
         this.saleRepository = saleRepository;
     }
 
-    async execute() {
-        return await this.saleRepository.findAll();
+    async execute(options = {}) {
+        return await this.saleRepository.findAll(options);
     }
 }

@@ -130,10 +130,12 @@ export const rejectGetCancelSale = (_req, res) => {
 // Lista todas las ventas
 export const getSales = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 0;
         const useCase = new GetSalesUseCase(saleRepository);
-        const result = await useCase.execute();
+        const result = await useCase.execute({ page, limit });
 
-        res.json({ data: result });
+        res.json({ data: result.data || result, pagination: result.data ? { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages } : undefined });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

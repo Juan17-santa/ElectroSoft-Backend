@@ -3,7 +3,7 @@ export default class GetClientsUseCase {
         this.clientRepository = clientRepository;
     }
 
-    async execute() {
-        return await this.clientRepository.findAll();
+    async execute(options = {}) {
+        return await this.clientRepository.findAll(options);
     }
 }

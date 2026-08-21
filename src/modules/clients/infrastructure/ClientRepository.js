@@ -5,8 +5,20 @@ export const clientRepository = {
         return await ClientModel.create(client);
     },
 
-    findAll: async () => {
-        return await ClientModel.find().sort({ createdAt: -1 }).populate('documentType');
+    findAll: async ({ page = 1, limit = 0 } = {}) => {
+        const query = ClientModel.find().sort({ createdAt: -1 }).populate('documentType');
+        
+        if (limit > 0) {
+            const skip = (page - 1) * limit;
+            const [data, total] = await Promise.all([
+                query.skip(skip).limit(limit).exec(),
+                ClientModel.countDocuments()
+            ]);
+            return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+        }
+        
+        const data = await query.exec();
+        return { data, total: data.length, page: 1, limit: data.length, totalPages: 1 };
     },
 
     findById: async (id) => {

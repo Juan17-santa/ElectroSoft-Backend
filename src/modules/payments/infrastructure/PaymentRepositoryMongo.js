@@ -16,8 +16,9 @@
 import { paymentModel } from "./PaymentModel.js";
 
 export default class PaymentRepositoryMongo {
-    async create(data) {
-        return await paymentModel.create(data);
+    async create(data, session) {
+        const [payment] = await paymentModel.create([data], { session });
+        return payment;
     }
 
     async findById(id) {
@@ -33,11 +34,22 @@ export default class PaymentRepositoryMongo {
             .session(session);
     }
 
-    async findAll() {
-        return await paymentModel
-            .find()
+    async findAll({ page = 1, limit = 0 } = {}) {
+        const query = paymentModel.find()
             .populate("ventaId", "numeroFactura total estado clienteId")
             .sort({ fechaPago: -1 });
+
+        if (limit > 0) {
+            const skip = (page - 1) * limit;
+            const [data, total] = await Promise.all([
+                query.skip(skip).limit(limit).exec(),
+                paymentModel.countDocuments()
+            ]);
+            return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+        }
+
+        const data = await query.exec();
+        return { data, total: data.length, page: 1, limit: data.length, totalPages: 1 };
     }
 
     async cancel(id) {

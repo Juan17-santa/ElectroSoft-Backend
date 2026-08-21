@@ -10,7 +10,7 @@ export default class GetPaymentsUseCase {
         this.paymentRepository = paymentRepository;
     }
 
-    async execute() {
-        return await this.paymentRepository.findAll();
+    async execute(options = {}) {
+        return await this.paymentRepository.findAll(options);
     }
 }
