@@ -10,6 +10,7 @@ export default class ShoppingEntity {
         purchaseDateIso,
         createdAt = new Date(),
         cancelledAt = null,
+        creadoPor = null, 
     }) {
         if (!invoiceNumber || !/^\d+$/.test(String(invoiceNumber).trim())) {
             throw new Error("The invoiceNumber is required and must contain only numbers");
@@ -63,6 +64,7 @@ export default class ShoppingEntity {
         this.purchaseDateIso = purchaseDateIso ?? null;
         this.createdAt = createdAt;
         this.cancelledAt = cancelledAt;
+        this.creadoPor = creadoPor;
     }
 
     calculateTotal() {

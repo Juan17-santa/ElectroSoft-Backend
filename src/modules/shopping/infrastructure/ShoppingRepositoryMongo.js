@@ -12,6 +12,7 @@
  * - update: actualiza una compra y retorna el documento actualizado.
  * - findAll: lista compras ordenadas por fechaCreacion descendente.
  */
+import mongoose from "mongoose";
 import { shoppingModel } from "./ShoppingModel.js";
 import { providerModel } from "../../providers/infrastructure/ProviderModel.js";
 
@@ -198,5 +199,72 @@ export default class ShoppingRepositoryMongo {
         }
 
         return { $or: ors };
+    }
+    async getMisEstadisticas(userId, year, month) {
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59);
+
+        return await shoppingModel.find({
+            creadoPor: userId,
+            estado: { $ne: "ANULADA" },
+            createdAt: { $gte: startDate, $lte: endDate }
+        });
+    }
+
+    async getMisComprasMensuales(userId, year) {
+        return await shoppingModel.aggregate([
+            {
+                $match: {
+                    creadoPor: new mongoose.Types.ObjectId(userId),
+                    estado: { $ne: "ANULADA" },
+                    createdAt: {
+                        $gte: new Date(year, 0, 1),
+                        $lte: new Date(year, 11, 31, 23, 59, 59)
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: { $month: "$createdAt" },
+                    total: { $sum: "$total" },
+                    cantidad: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+    }
+
+    async getMisEstadisticas(userId, year, month) {
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59);
+
+        return await shoppingModel.find({
+            creadoPor: userId,
+            estado: { $ne: "ANULADA" },
+            createdAt: { $gte: startDate, $lte: endDate }
+        });
+    }
+
+    async getMisComprasMensuales(userId, year) {
+        return await shoppingModel.aggregate([
+            {
+                $match: {
+                    creadoPor: new mongoose.Types.ObjectId(userId),
+                    estado: { $ne: "ANULADA" },
+                    createdAt: {
+                        $gte: new Date(year, 0, 1),
+                        $lte: new Date(year, 11, 31, 23, 59, 59)
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: { $month: "$createdAt" },
+                    total: { $sum: "$total" },
+                    cantidad: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
     }
 }

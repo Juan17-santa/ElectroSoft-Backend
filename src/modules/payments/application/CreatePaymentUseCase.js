@@ -7,7 +7,7 @@
  * - Calcular el saldo pendiente con el calculador canónico de ventas
  *   (incluye pagos y reembolsos de devoluciones RESUELTAS).
  * - Validar que el monto no supere el saldo pendiente.
- * - Calcular el saldoPendiente y determinar el estado del pago.
+ * - Calcular el saldoPendiente y determinar el estado del pago y de la venta.
  * - Crear la entidad PaymentEntity con validaciones de dominio.
  * - Guardar el pago y recalcular saldo/estado de la venta.
  *
@@ -15,7 +15,12 @@
  *   saldoActual          = max(0, total - pagoBase - pagos - reembolsos)
  *   nuevoTotalPagado     = pagoBase + pagos previos + monto
  *   nuevoSaldo           = max(0, total - nuevoTotalPagado)
- *   estado               = nuevoSaldo === 0 ? 'PAGADA' : 'PENDIENTE'
+ *   estadoPago           = nuevoSaldo === 0 ? 'PAGADA'     : 'PENDIENTE'   (enum de Payment)
+ *   estadoVenta          = nuevoSaldo === 0 ? 'Finalizado' : 'Vigente'     (enum de Sale)
+ *
+ * IMPORTANTE: Payment y Sale tienen enums de estado distintos. No deben
+ * compartir la misma variable de "nuevo estado" — de ahí la separación
+ * explícita entre nuevoEstadoPago y nuevoEstadoVenta.
  */
 import mongoose from "mongoose";
 import PaymentEntity from "../domain/PaymentEntity.js";
@@ -91,7 +96,11 @@ export default class CreatePaymentUseCase {
             const nuevoTotalPagado = totalPagadoAnterior + montoNum;
             // Evitamos saldos negativos por efecto del redondeo
             const nuevoSaldoPendiente = Math.max(0, totalVenta - nuevoTotalPagado);
-            const nuevoEstado = nuevoSaldoPendiente === 0 ? "PAGADA" : "PENDIENTE";
+
+            // Estado del Payment (enum propio: PAGADA / PENDIENTE)
+            const nuevoEstadoPago = nuevoSaldoPendiente === 0 ? "PAGADA" : "PENDIENTE";
+            // Estado de la Sale (enum propio: Finalizado / Vigente)
+            const nuevoEstadoVenta = nuevoSaldoPendiente === 0 ? "Finalizado" : "Vigente";
 
             // Crear entidad con validaciones de dominio
             const payment = new PaymentEntity({
@@ -100,25 +109,17 @@ export default class CreatePaymentUseCase {
                 metodoPago,
                 totalPagado: nuevoTotalPagado,
                 saldoPendiente: nuevoSaldoPendiente,
-                estado: nuevoEstado,
+                estado: nuevoEstadoPago,
                 fechaPago: new Date(),
                 notas: notas || "",
             });
 
             const createdPayment = await this.paymentRepository.create(payment, session);
 
-            // Recalcular saldo y estado de la venta con el calculador canónico
-            // Actualizamos la venta temporalmente con el nuevo abono para calcular
-            const tempSale = { ...venta.toObject(), _id: venta._id }; 
-            // OJO: getSaleSaldo buscará en paymentModel. findByVentaId buscará pagos, pero el nuevo aún no está comiteado, 
-            // Sin embargo, Mongoose debería verlo en la misma sesión si le pasamos session. 
-            // wait, getSaleSaldo no recibe session! Modificaremos getSaleSaldo o simplemente le calculamos el estado con lo que ya sabemos.
-            // Lo más seguro es usar el calculador pasándole el session (lo cual requiere refactor de SaleFinancialStateService).
-            // O podemos setear a pata el estado ya calculado:
-            
+            // Recalcular saldo y estado de la venta
             const saleUpdate = { montoPorPagar: nuevoSaldoPendiente };
-            if (nuevoEstado !== venta.estado) {
-                saleUpdate.estado = nuevoEstado;
+            if (nuevoEstadoVenta !== venta.estado) {
+                saleUpdate.estado = nuevoEstadoVenta;
             }
             await this.saleGateway.updateSale(ventaId, saleUpdate, session);
 

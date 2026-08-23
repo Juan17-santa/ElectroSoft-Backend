@@ -51,10 +51,8 @@ export default class ConfirmOrderUseCase {
         }
 
         let numeroFactura = "01";
-        if (this.saleRepository) {
-            const allSales = await this.saleRepository.findAll();
-            const count = Array.isArray(allSales) ? allSales.length + 1 : 1;
-            numeroFactura = String(count).padStart(2, '0');
+        if (this.saleRepository?.getNextInvoiceNumber) {
+            numeroFactura = await this.saleRepository.getNextInvoiceNumber();
         }
 
         let tipoVenta;
@@ -112,7 +110,8 @@ export default class ConfirmOrderUseCase {
             tipoVenta,
             fechaVenta: new Date().toISOString().split("T")[0],
             diasPlazo,
-            montoCredito
+            montoCredito,
+            creadoPor: confirmationData.creadoPor || null,
         };
 
         try {

@@ -44,8 +44,12 @@ export const createSale = async (req, res) => {
             externalCatalogGateway,
         );
 
+        const numeroFactura = await saleRepository.getNextInvoiceNumber();   // ← ESTA LÍNEA FALTA
+
         const saleData = {
             ...req.body,
+            numeroFactura,
+            creadoPor: req.user?.id || null,
             productos: req.body.productos?.map((producto) => ({
                 productoId: producto.productoId ?? producto.id,
                 cantidad: producto.cantidad,
@@ -172,5 +176,51 @@ export const getSaleById = async (req, res) => {
         res.json({ data: result });
     } catch (error) {
         res.status(404).json({ error: error.message });
+    }
+};
+
+
+export const getMisEstadisticas = async (req, res) => {
+    try {
+        const { year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query;
+        const userId = req.user.id;
+
+        const ventas = await saleRepository.getMisEstadisticas(userId, Number(year), Number(month));
+
+        const totalVentas = ventas.reduce((acc, v) => acc + v.total, 0);
+        const productosVendidos = ventas.reduce((acc, v) =>
+            acc + v.productos.reduce((sum, p) => sum + p.cantidad, 0), 0);
+        const ventasPorTipo = {
+            Contado: ventas
+                .filter(v => v.tipoVenta === "Contado")
+                .reduce((acc, v) => acc + v.total, 0),
+            Credito: ventas
+                .filter(v => v.tipoVenta === "Crédito" || v.tipoVenta === "Credito")
+                .reduce((acc, v) => acc + v.total, 0),
+        };
+
+        res.json({
+            success: true,
+            data: {
+                totalVentas,
+                productosVendidos,
+                cantidadVentas: ventas.length,
+                ventasPorTipo,
+                ventas,
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getMisVentasMensuales = async (req, res) => {
+    try {
+        const { year = new Date().getFullYear() } = req.query;
+        const userId = req.user.id;
+        const data = await saleRepository.getMisVentasMensuales(userId, Number(year));
+        res.json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };

@@ -30,6 +30,7 @@ export default class SaleEntity {
         montoPorPagar = 0,
         montoCredito = 0,
         montoContado = 0,
+        creadoPor = null,
     }) {
         // VALIDACIÓN: NÚMERO DE FACTURA
         if (!numeroFactura || !String(numeroFactura).trim()) {
@@ -90,6 +91,7 @@ export default class SaleEntity {
         this.montoPorPagar = Number(montoPorPagar || 0);
         this.montoCredito = Number(montoCredito || 0);
         this.montoContado = Number(montoContado || 0);
+        this.creadoPor = creadoPor;
     }
 
     calculateTotal() {

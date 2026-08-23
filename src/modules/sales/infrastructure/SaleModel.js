@@ -129,6 +129,11 @@ const saleSchema = new mongoose.Schema({
         default: "",
         trim: true,
     },
+    creadoPor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        default: null,
+    },
 });
 
 saleSchema.index({ numeroFactura: 1, estado: 1 });
