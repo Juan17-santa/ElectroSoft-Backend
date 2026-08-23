@@ -121,6 +121,41 @@ export default class SaleRepositoryMongo {
         const count = await saleModel.countDocuments({ clienteId: clientId });
         return count > 0;
     }
+    async getMisEstadisticas(userId, year, month) {
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59);
+
+        const ventas = await saleModel.find({
+            creadoPor: userId,
+            estado: { $ne: "ANULADA" },
+            fechaCreacion: { $gte: startDate, $lte: endDate }
+        }).populate("productos.productoId", "nombre categoria");
+
+        return ventas;
+    }
+    async getMisVentasMensuales(userId, year) {
+        const ventas = await saleModel.aggregate([
+            {
+                $match: {
+                    creadoPor: new mongoose.Types.ObjectId(userId),
+                    estado: { $ne: "ANULADA" },
+                    fechaCreacion: {
+                        $gte: new Date(year, 0, 1),
+                        $lte: new Date(year, 11, 31, 23, 59, 59)
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: { $month: "$fechaCreacion" },
+                    total: { $sum: "$total" },
+                    cantidad: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+        return ventas;
+    }
 }
 
 async function enrichSalesWithPayments(sales) {
