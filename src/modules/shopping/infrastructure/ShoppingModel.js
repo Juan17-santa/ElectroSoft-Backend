@@ -127,6 +127,11 @@ const shoppingSchema = new mongoose.Schema({
         motivo: { type: String, default: null },
         fechaAnulacion: { type: Date, default: null },
     },
+    creadoPor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        default: null,
+    },
 });
 
 // Índice único parcial: una factura solo puede existir una vez en una compra

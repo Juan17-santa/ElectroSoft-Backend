@@ -95,6 +95,7 @@ export const createShopping = async (req, res) => {
         // Mapeo del request HTTP al formato del dominio.
         const shoppingData = {
             invoiceNumber: req.body.invoiceNumber,
+            creadoPor: req.user?.id || null,
             providerId: req.body.providerId,
             purchaseDate: req.body.purchaseDate,
             products: (req.body.products ?? []).map((product) => ({
@@ -237,4 +238,37 @@ export const rejectGetCancelShopping = (_req, res) => {
     res.status(405).json({
         error: "Metodo no permitido. Para anular una compra usa PATCH /api/shopping/:id/cancel",
     });
+};
+
+export const getMisEstadisticasCompras = async (req, res) => {
+    try {
+        const { year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query;
+        const userId = req.user.id;
+
+        const compras = await shoppingRepository.getMisEstadisticas(userId, Number(year), Number(month));
+
+        const totalCompras = compras.reduce((acc, c) => acc + c.total, 0);
+
+        res.json({
+            success: true,
+            data: {
+                totalCompras,
+                cantidadCompras: compras.length,
+                compras,
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getMisComprasMensuales = async (req, res) => {
+    try {
+        const { year = new Date().getFullYear() } = req.query;
+        const userId = req.user.id;
+        const data = await shoppingRepository.getMisComprasMensuales(userId, Number(year));
+        res.json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
