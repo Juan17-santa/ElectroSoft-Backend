@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { AVATAR_COLORS, AVATAR_LETTERS, DEFAULT_AVATAR_COLOR, DEFAULT_AVATAR_LETTER } from "../domain/avatarOptions.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -46,6 +47,16 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: "",
+    },
+    avatarLetter: {
+      type: String,
+      enum: AVATAR_LETTERS,
+      default: DEFAULT_AVATAR_LETTER,
+    },
+    avatarColor: {
+      type: String,
+      enum: AVATAR_COLORS,
+      default: DEFAULT_AVATAR_COLOR,
     },
   },
   {

@@ -1,5 +1,6 @@
 import { comparePassword } from "../../../infrastructure/security/passwordEncrypter.js";
 import { generateToken } from "../../../infrastructure/security/tokenGenerator.js";
+import { DEFAULT_AVATAR_COLOR, DEFAULT_AVATAR_LETTER } from "../../users/domain/avatarOptions.js";
 
 export default class LoginUseCase {
   constructor(userRepository) {
@@ -51,6 +52,8 @@ export default class LoginUseCase {
         },
         documentNumber: user.documentNumber,
         avatar: user.avatar || "",
+        avatarLetter: user.avatarLetter || DEFAULT_AVATAR_LETTER,
+        avatarColor: user.avatarColor || DEFAULT_AVATAR_COLOR,
       },
     };
   }

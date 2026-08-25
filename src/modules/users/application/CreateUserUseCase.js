@@ -1,5 +1,6 @@
 import UserEntity from "../domain/UserEntity.js";
 import { encryptPassword } from "../../../infrastructure/security/passwordEncrypter.js";
+import { DEFAULT_AVATAR_COLOR, DEFAULT_AVATAR_LETTER } from "../domain/avatarOptions.js";
 
 const DEFAULT_PASSWORD = "123456";
 
@@ -54,6 +55,8 @@ export default class CreateUserUseCase {
       documentType: userEntity.documentType,
       documentNumber: userEntity.documentNumber,
       role: userEntity.role,
+      avatarLetter: DEFAULT_AVATAR_LETTER,
+      avatarColor: DEFAULT_AVATAR_COLOR,
     });
   }
 }

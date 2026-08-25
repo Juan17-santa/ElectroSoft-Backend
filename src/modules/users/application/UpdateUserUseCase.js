@@ -1,4 +1,5 @@
 import { encryptPassword } from "../../../infrastructure/security/passwordEncrypter.js";
+import { DEFAULT_AVATAR_COLOR, DEFAULT_AVATAR_LETTER, isValidAvatar } from "../domain/avatarOptions.js";
 
 export default class UpdateUserUseCase {
   constructor(userRepository, roleRepository, documentTypeRepository) {
@@ -7,7 +8,7 @@ export default class UpdateUserUseCase {
     this.documentTypeRepository = documentTypeRepository;
   }
 
-  async execute(id, { fullName, email, password, phone, documentType, documentNumber, role, avatar }) {
+  async execute(id, { fullName, email, password, phone, documentType, documentNumber, role, avatarLetter, avatarColor, avatar }) {
     // 1. Verificar que el usuario existe
     const existing = await this.userRepository.findById(id);
     if (!existing) throw new Error("Usuario no encontrado");
@@ -68,7 +69,16 @@ export default class UpdateUserUseCase {
       updateData.password = await encryptPassword(password);
     }
 
-    if (avatar !== undefined) updateData.avatar = avatar;
+    if (avatarLetter !== undefined || avatarColor !== undefined) {
+      const nextLetter = avatarLetter || existing.avatarLetter || DEFAULT_AVATAR_LETTER;
+      const nextColor = avatarColor || existing.avatarColor || DEFAULT_AVATAR_COLOR;
+      if (!isValidAvatar(nextLetter, nextColor)) {
+        throw new Error("El avatar seleccionado no es válido");
+      }
+      updateData.avatarLetter = nextLetter;
+      updateData.avatarColor = nextColor;
+      updateData.avatar = "";
+    }
 
     return await this.userRepository.update(id, updateData);
   }
