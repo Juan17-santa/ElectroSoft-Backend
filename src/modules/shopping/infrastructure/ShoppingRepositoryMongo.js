@@ -63,9 +63,9 @@ export default class ShoppingRepositoryMongo {
     }
 
 
-    async findActiveByInvoice(invoiceNumber, session = null) {
+    async findActiveByInvoice(invoiceNumber, providerId, session = null) {
         return await shoppingModel
-            .findOne({ invoiceNumber: String(invoiceNumber).trim(), estado: "ACTIVA" })
+            .findOne({ invoiceNumber: String(invoiceNumber).trim(), providerId, estado: "ACTIVA" })
             .populate('providerId', 'providerName')
             .populate('products.productId', 'name')
             .session(session);
@@ -89,9 +89,9 @@ export default class ShoppingRepositoryMongo {
         );
     }
 
-    async checkInvoiceExists(invoiceNumber) {
+    async checkInvoiceExists(invoiceNumber, providerId) {
         const found = await shoppingModel
-            .findOne({ invoiceNumber: String(invoiceNumber).trim(), estado: "ACTIVA" })
+            .findOne({ invoiceNumber: String(invoiceNumber).trim(), providerId, estado: "ACTIVA" })
             .select("_id");
         return Boolean(found);
     }

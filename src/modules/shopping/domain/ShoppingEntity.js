@@ -48,6 +48,7 @@ export default class ShoppingEntity {
         this.providerId = providerId;
         this.products = products.map((product) => ({
             productId: product.productId,
+            productName: product.productName || product.nombre || null,
             quantity: Number(product.quantity),
             purchasePrice: Number(product.purchasePrice),
             salePrice: Number(product.salePrice),

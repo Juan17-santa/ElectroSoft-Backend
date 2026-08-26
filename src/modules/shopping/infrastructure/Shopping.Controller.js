@@ -186,7 +186,9 @@ export const exportShopping = async (req, res) => {
 // Verifica si un número de factura está en uso por una compra activa.
 export const checkInvoiceExists = async (req, res) => {
     try {
-        const exists = await shoppingRepository.checkInvoiceExists(req.params.number);
+        const { providerId } = req.query;
+        if (!isValidObjectId(providerId)) return res.status(400).json({ error: "El proveedor es requerido" });
+        const exists = await shoppingRepository.checkInvoiceExists(req.params.number, providerId);
         res.json({ exists });
     } catch (error) {
         sendUnexpectedError(res, error);
