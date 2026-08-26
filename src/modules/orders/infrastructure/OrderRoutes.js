@@ -16,6 +16,7 @@ import { requireAuth } from "../../../infrastructure/middlewares/requireAuth.js"
 import { requirePermission } from "../../../infrastructure/middlewares/requirePermission.js";
 import {
     createOrder,
+    updateOrder,
     getOrders,
     getOrderById,
     cancelOrder,
@@ -25,6 +26,7 @@ import {
 const router = Router();
 
 router.post("/", requireAuth, requirePermission("pedidos:procesar"), createOrder);
+router.put("/:id", requireAuth, requirePermission("pedidos:editar"), updateOrder);
 router.get("/", requireAuth, requirePermission("pedidos:acceso", "pedidos:ver"), getOrders);
 router.get("/:id", requireAuth, requirePermission("pedidos:ver"), getOrderById);
 router.patch("/:id/cancel", requireAuth, requirePermission("pedidos:anular"), cancelOrder);

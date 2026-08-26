@@ -19,7 +19,7 @@ export default class GetOrderByIdUseCase {
             throw new Error("Pedido no encontrado");
         }
 
-        const isExpired = order.status === "Pendiente" && new Date(order.dueDate) < new Date();
+        const isExpired = order.status === "Por procesar" && new Date(order.dueDate) < new Date();
 
         if (isExpired) {
             order = await this.orderRepository.expireSingleOrder(order);

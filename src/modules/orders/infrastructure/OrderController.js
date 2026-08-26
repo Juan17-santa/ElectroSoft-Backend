@@ -13,6 +13,7 @@
 import mongoose from "mongoose";
 
 import CreateOrderUseCase from "../application/CreateOrderUseCase.js";
+import UpdateOrderUseCase from "../application/UpdateOrderUseCase.js";
 import GetOrdersUseCase from "../application/GetOrdersUseCase.js";
 import GetOrderByIdUseCase from "../application/GetOrderByIdUseCase.js";
 import CancelOrderUseCase from "../application/CancelOrderUseCase.js";
@@ -98,6 +99,18 @@ export const confirmOrder = async (req, res) => {
         const result = await useCase.execute(id, { ...req.body, creadoPor: req.user?.id || null }); // ← cambio aquí
 
         res.json({ message: "Pedido confirmado, convertido en venta y eliminado de orders.", data: result });
+    } catch (error) {
+        sendControllerError(res, error, 400);
+    }
+};
+
+export const updateOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: "ID inválido" });
+        const useCase = new UpdateOrderUseCase(orderRepository, clientRepositoryInstance, productRepository);
+        const result = await useCase.execute(id, req.body);
+        res.json({ message: "Pedido actualizado con éxito.", data: result });
     } catch (error) {
         sendControllerError(res, error, 400);
     }

@@ -24,6 +24,11 @@ const shoppingProductSchema = new mongoose.Schema(
             ref: "Product",
             required: true,
         },
+        productName: {
+            type: String,
+            required: false,
+            trim: true,
+        },
         quantity: {
             type: Number,
             required: true,
@@ -137,7 +142,7 @@ const shoppingSchema = new mongoose.Schema({
 // Índice único parcial: una factura solo puede existir una vez en una compra
 // ACTIVA. Las anuladas pueden reutilizar el número (regla de negocio actual).
 shoppingSchema.index(
-    { invoiceNumber: 1 },
+    { providerId: 1, invoiceNumber: 1 },
     { unique: true, partialFilterExpression: { estado: "ACTIVA" } },
 );
 shoppingSchema.index({ createdAt: -1 });

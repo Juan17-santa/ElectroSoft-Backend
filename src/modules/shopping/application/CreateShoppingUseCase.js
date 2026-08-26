@@ -86,11 +86,12 @@ export default class CreateShoppingUseCase {
 
             const existingShopping = await this.shoppingRepository.findActiveByInvoice(
                 shoppingData.invoiceNumber,
+                shoppingData.providerId,
                 session,
             );
 
             if (existingShopping) {
-                throw new Error("El numero de factura ya esta en uso en una compra activa");
+                throw new Error("El numero de factura ya esta en uso en otra compra del mismo proveedor");
             }
 
             // Crear productos nuevos en BD antes de construir la entidad.
@@ -120,6 +121,7 @@ export default class CreateShoppingUseCase {
 
                 prod.previousPrice = prevPrice;
                 prod.previousCostoPromedio = prevCosto;
+                prod.productName = currentProduct.name;
             }
 
             shopping.calculateTotal();

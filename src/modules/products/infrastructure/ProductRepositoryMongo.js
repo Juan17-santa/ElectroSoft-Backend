@@ -17,6 +17,7 @@
 import { productModel } from "./ProductModel.js";
 import { orderModel } from "../../orders/infrastructure/OrderModel.js";
 import { saleModel } from "../../sales/infrastructure/SaleModel.js";
+import { shoppingModel } from "../../shopping/infrastructure/ShoppingModel.js";
 
 class ProductRepositoryMongo {
 
@@ -141,9 +142,17 @@ class ProductRepositoryMongo {
             { $group: { _id: "$productos.productoId" } }
         ]);
 
+        const shoppingAssociations = await shoppingModel.aggregate([
+            { $match: { "products.productId": { $in: productIds } } },
+            { $unwind: "$products" },
+            { $match: { "products.productId": { $in: productIds } } },
+            { $group: { _id: "$products.productId" } }
+        ]);
+
         const associatedIds = new Set();
         orderAssociations.forEach(item => associatedIds.add(item._id.toString()));
         saleAssociations.forEach(item => associatedIds.add(item._id.toString()));
+        shoppingAssociations.forEach(item => associatedIds.add(item._id.toString()));
 
         return associatedIds;
     }

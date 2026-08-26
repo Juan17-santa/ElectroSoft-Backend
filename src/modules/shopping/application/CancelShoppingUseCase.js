@@ -1,5 +1,6 @@
 const HOURS_LIMIT = 48;
 const MILLISECONDS_PER_HOUR = 1000 * 60 * 60;
+const MIN_REASON_LENGTH = 20;
 
 function validateCancellationWindow(shopping, now) {
     const createdAt = new Date(shopping.createdAt);
@@ -41,6 +42,10 @@ export default class CancelShoppingUseCase {
     }
 
     async execute(id, motivo = null) {
+        if (typeof motivo !== "string" || motivo.trim().length < MIN_REASON_LENGTH) {
+            throw new Error(`El motivo de anulación es obligatorio y debe tener al menos ${MIN_REASON_LENGTH} caracteres`);
+        }
+
         const session = await this.transactionManager.startSession();
 
         try {
@@ -64,7 +69,7 @@ export default class CancelShoppingUseCase {
             }
 
             const cancellationInfo = {
-                motivo: motivo ?? "Anulada desde backend",
+                motivo: motivo.trim(),
                 fechaAnulacion: now,
             };
 

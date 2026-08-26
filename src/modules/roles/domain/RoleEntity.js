@@ -15,7 +15,7 @@ const VALID_PERMISSIONS = [
   // Clientes
   "clientes:acceso", "clientes:ver", "clientes:crear", "clientes:editar", "clientes:cupo", "clientes:eliminar", "clientes:reporte",
   // Pedidos
-  "pedidos:acceso", "pedidos:ver", "pedidos:crear", "pedidos:procesar", "pedidos:anular", "pedidos:reporte",
+  "pedidos:acceso", "pedidos:ver", "pedidos:crear", "pedidos:editar", "pedidos:procesar", "pedidos:anular", "pedidos:reporte",
   // Ventas
   "ventas:acceso", "ventas:ver", "ventas:crear", "ventas:anular", "ventas:devolver", "ventas:abonar", "ventas:reporte",
   // Pagos
@@ -64,7 +64,7 @@ export default class RoleEntity {
       proveedores: ["proveedores:acceso", "proveedores:ver", "proveedores:crear", "proveedores:editar", "proveedores:estado", "proveedores:eliminar"],
       compras: ["compras:acceso", "compras:ver", "compras:crear", "compras:anular", "compras:reporte"],
       clientes: ["clientes:acceso", "clientes:ver", "clientes:crear", "clientes:editar", "clientes:cupo", "clientes:eliminar", "clientes:reporte"],
-      pedidos: ["pedidos:acceso", "pedidos:ver", "pedidos:crear", "pedidos:procesar", "pedidos:anular", "pedidos:reporte"],
+      pedidos: ["pedidos:acceso", "pedidos:ver", "pedidos:crear", "pedidos:editar", "pedidos:procesar", "pedidos:anular", "pedidos:reporte"],
       ventas: ["ventas:acceso", "ventas:ver", "ventas:crear", "ventas:anular", "ventas:devolver", "ventas:abonar", "ventas:reporte"],
       pagos: ["pagos:acceso", "pagos:ver", "pagos:abonar", "pagos:editar-cupo"],
       devoluciones: ["devoluciones:acceso", "devoluciones:ver", "devoluciones:editar", "devoluciones:anular", "devoluciones:reporte"],

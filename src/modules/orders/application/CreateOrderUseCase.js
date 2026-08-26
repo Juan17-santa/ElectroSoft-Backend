@@ -1,6 +1,8 @@
 import OrderEntity from "../domain/OrderEntity.js";
 import NotificationService from "../../notifications/application/NotificationService.js";
 
+const MINIMUM_CREDIT_AMOUNT = 10000;
+
 export default class CreateOrderUseCase {
     constructor(orderRepository, clientRepository, productRepository) {
         this.orderRepository = orderRepository;
@@ -77,6 +79,10 @@ export default class CreateOrderUseCase {
         }
 
         if (orderData.paymentMethod === "Credito" || orderData.paymentMethod === "Mixto") {
+            if (calculatedTotal < MINIMUM_CREDIT_AMOUNT) {
+                throw new Error("El total del pedido debe ser mínimo de $10.000 para usar crédito.");
+            }
+
             if (!clientExists.cupoActivo) {
                 throw new Error(
                     "El cliente no tiene un cupo de crédito habilitado."
@@ -105,6 +111,10 @@ export default class CreateOrderUseCase {
                     );
                 }
 
+                if (requestedCredit < MINIMUM_CREDIT_AMOUNT) {
+                    throw new Error("El monto a crédito debe ser mínimo de $10.000.");
+                }
+
                 if (requestedCredit > calculatedTotal) {
                     throw new Error(
                         "El crédito solicitado no puede superar el total del pedido."
@@ -115,6 +125,10 @@ export default class CreateOrderUseCase {
                     throw new Error(
                         `El crédito solicitado ($${requestedCredit}) supera el cupo disponible ($${cupoDisponible}). Cupo Total: $${clientExists.cupoTotal}, Deuda Actual: $${currentDebt}.`
                     );
+                }
+
+                if (calculatedTotal - requestedCredit < MINIMUM_CREDIT_AMOUNT) {
+                    throw new Error("La parte de contado debe ser mínimo de $10.000.");
                 }
             }
         }
@@ -136,7 +150,7 @@ export default class CreateOrderUseCase {
             subtotal: calculatedSubtotal,
             iva: calculatedIva,
             total: calculatedTotal,
-            status: "Pendiente"
+            status: "Por procesar"
         });
 
         for (const item of validatedProducts) {
