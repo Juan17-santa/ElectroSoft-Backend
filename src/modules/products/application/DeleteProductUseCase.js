@@ -18,7 +18,7 @@ export default class DeleteProductUseCase {
         }
 
         if (product.canDelete === false) {
-            throw new Error("No se puede eliminar el producto porque tiene ventas o pedidos asociados. Solo puede desactivarse.");
+            throw new Error("No se puede eliminar el producto porque tiene compras, ventas o pedidos asociados. Solo puede desactivarse.");
         }
 
         return await this.productRepository.delete(id);
