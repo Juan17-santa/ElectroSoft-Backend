@@ -2,7 +2,7 @@
  * Caso de uso para obtener todos los pedidos.
  *
  * Responsabilidades:
- * - Ejecutar la anulación automática de pedidos pendientes vencidos.
+ * - Ejecutar la anulación automática de pedidos por procesar vencidos.
  * - Retornar la lista de pedidos actualizada.
  */
 

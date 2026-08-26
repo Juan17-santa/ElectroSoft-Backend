@@ -3,10 +3,12 @@
  *
  * Responsabilidades:
  * - Validar que el pedido exista.
- * - Validar que el pedido esté en estado "Pendiente".
+ * - Validar que el pedido esté en estado "Por procesar".
  * - Usar la lógica existente de CreateSaleUseCase para crear la venta.
  * - Eliminar el pedido de la colección orders solo si la venta se creó correctamente.
  */
+
+const MINIMUM_CREDIT_AMOUNT = 10000;
 
 export default class ConfirmOrderUseCase {
     constructor(orderRepository, createSaleUseCase, productRepository, saleRepository) {
@@ -33,8 +35,8 @@ export default class ConfirmOrderUseCase {
             throw new Error("Pedido no encontrado");
         }
 
-        if (order.status !== "Pendiente") {
-            throw new Error("Solo se pueden confirmar pedidos en estado Pendiente");
+        if (order.status !== "Por procesar") {
+            throw new Error("Solo se pueden confirmar pedidos en estado Por procesar");
         }
 
         const revertedProducts = [];
@@ -72,6 +74,9 @@ export default class ConfirmOrderUseCase {
         let montoCredito = 0;
 
         if (tipoVenta === "Crédito" || tipoVenta === "Mixto") {
+            if (Number(order.total) < MINIMUM_CREDIT_AMOUNT) {
+                throw new Error("El total del pedido debe ser mínimo de $10.000 para usar crédito.");
+            }
             if (confirmationData.diasPlazo == null) {
                 throw new Error("Debe indicar el plazo del crédito.");
             }
@@ -94,8 +99,16 @@ export default class ConfirmOrderUseCase {
                 throw new Error("El monto de crédito debe ser mayor a cero.");
             }
 
+            if (montoCredito < MINIMUM_CREDIT_AMOUNT) {
+                throw new Error("El monto a crédito debe ser mínimo de $10.000.");
+            }
+
             if (montoCredito > order.total) {
                 throw new Error("El monto de crédito no puede superar el total del pedido.");
+            }
+
+            if (Number(order.total) - montoCredito < MINIMUM_CREDIT_AMOUNT) {
+                throw new Error("La parte de contado debe ser mínimo de $10.000.");
             }
         }
 

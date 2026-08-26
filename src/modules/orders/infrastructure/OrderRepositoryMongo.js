@@ -75,7 +75,7 @@ class OrderRepositoryMongo {
 
         while (true) {
             const expiredOrder = await orderModel.findOne({
-                status: "Pendiente",
+                status: "Por procesar",
                 dueDate: { $lt: now },
             }).select("_id").sort({ dueDate: 1 });
 
@@ -93,7 +93,7 @@ class OrderRepositoryMongo {
         try {
             await session.withTransaction(async () => {
                 const order = await orderModel.findOneAndUpdate(
-                    { _id: id, status: "Pendiente", dueDate: { $lt: now } },
+                    { _id: id, status: "Por procesar", dueDate: { $lt: now } },
                     {
                         $set: {
                             status: "Anulado",
@@ -129,7 +129,7 @@ class OrderRepositoryMongo {
         try {
             await session.withTransaction(async () => {
                 const order = await orderModel.findOneAndUpdate(
-                    { _id: id, status: "Pendiente" },
+                    { _id: id, status: "Por procesar" },
                     { $set: { status: "Anulado", cancelReason: reason, canceledAt: now } },
                     { returnDocument: "after", runValidators: true, session },
                 );

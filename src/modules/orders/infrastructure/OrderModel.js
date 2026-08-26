@@ -53,8 +53,8 @@ const orderSchema = new mongoose.Schema({
     iva: { type: Number, required: true, min: 0 },
     // TOTAL GENERAL
     total: { type: Number, required: true, min: 0 },
-    // ESTADO DEL PEDIDO / Solo Pendiente o Anulado.
-    status: { type: String, enum: ["Pendiente", "Anulado"], default: "Pendiente" },
+    // ESTADO DEL PEDIDO / Solo Por procesar o Anulado.
+    status: { type: String, enum: ["Por procesar", "Anulado"], default: "Por procesar" },
     // MOTIVO DE ANULACIÓN cuando el pedido se cancela manualmente.
     cancelReason: { type: String, default: null, trim: true },
     // FECHA DE ANULACIÓN cuando la cancelación se realiza manualmente.

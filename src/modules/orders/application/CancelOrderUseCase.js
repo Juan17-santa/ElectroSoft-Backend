@@ -4,7 +4,7 @@
  * Responsabilidades:
  * - Validar la razón de cancelación (Mínimo 20 caracteres).
  * - Validar que el pedido exista.
- * - Validar que el pedido esté en estado "Pendiente".
+ * - Validar que el pedido esté en estado "Por procesar".
  * - Devolver las cantidades de los productos al stock.
  * - Cambiar el estado del pedido a "Anulado".
  */
@@ -31,8 +31,8 @@ export default class CancelOrderUseCase {
             throw new Error("Pedido no encontrado");
         }
 
-        if (order.status !== "Pendiente") {
-            throw new Error("Solo se puede cancelar un pedido que esté en estado Pendiente.");
+        if (order.status !== "Por procesar") {
+            throw new Error("Solo se puede anular un pedido que esté en estado Por procesar.");
         }
 
         const canceledOrder = await this.orderRepository.cancelAndRestoreStock(
@@ -42,7 +42,7 @@ export default class CancelOrderUseCase {
         );
 
         if (!canceledOrder) {
-            throw new Error("El pedido ya no está pendiente de cancelación.");
+            throw new Error("El pedido ya no está disponible para anulación.");
         }
 
         return canceledOrder;
