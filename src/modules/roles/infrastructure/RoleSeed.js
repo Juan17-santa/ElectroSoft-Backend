@@ -41,6 +41,7 @@ const EMPLEADO_PERMISSIONS = [
   "pedidos:acceso",
   "pedidos:ver",
   "pedidos:crear",
+  "pedidos:editar",
   "pedidos:procesar",
   "pedidos:anular",
   "pedidos:reporte",
