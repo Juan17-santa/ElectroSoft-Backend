@@ -129,9 +129,9 @@ export default class SaleRepositoryMongo {
             creadoPor: userId,
             estado: { $ne: "ANULADA" },
             fechaCreacion: { $gte: startDate, $lte: endDate }
-        }).populate("productos.productoId", "nombre categoria");
+        }).populate("productos.productoId", "nombre categoria").lean();
 
-        return ventas;
+        return enrichSalesWithPayments(ventas);
     }
     async getMisVentasMensuales(userId, year) {
         const ventas = await saleModel.aggregate([
@@ -146,9 +146,41 @@ export default class SaleRepositoryMongo {
                 }
             },
             {
+                $lookup: {
+                    from: "payments",
+                    let: { saleId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ["$ventaId", "$$saleId"] },
+                                estado: { $ne: "ANULADO" },
+                            },
+                        },
+                        { $project: { monto: 1, _id: 0 } },
+                    ],
+                    as: "pagosActivos",
+                },
+            },
+            {
+                $addFields: {
+                    montoCobrado: {
+                        $cond: [
+                            { $eq: ["$tipoVenta", "Contado"] },
+                            "$total",
+                            {
+                                $add: [
+                                    { $ifNull: ["$montoContado", 0] },
+                                    { $sum: "$pagosActivos.monto" },
+                                ],
+                            },
+                        ],
+                    },
+                },
+            },
+            {
                 $group: {
                     _id: { $month: "$fechaCreacion" },
-                    total: { $sum: "$total" },
+                    total: { $sum: "$montoCobrado" },
                     cantidad: { $sum: 1 }
                 }
             },

@@ -18,6 +18,7 @@
  * - GET    /shopping/:id
  */
 import CancelShoppingUseCase from "../application/CancelShoppingUseCase.js";
+import NotificationService from "../../notifications/application/NotificationService.js";
 import CreateShoppingUseCase from "../application/CreateShoppingUseCase.js";
 import GetShoppingByIdUseCase from "../application/GetShoppingByIdUseCase.js";
 import GetShoppingUseCase from "../application/GetShoppingUseCase.js";
@@ -131,6 +132,13 @@ export const cancelShopping = async (req, res) => {
         // El frontend envía el motivo en `motivo` (payload JSON). Aceptamos también `reason`.
         const motivo = req.body?.motivo ?? req.body?.reason ?? null;
         const result = await useCase.execute(req.params.id, motivo);
+
+        await NotificationService.createNotification(
+            "Compra Anulada",
+            `Se ha anulado la compra ${req.params.id}.`,
+            "PAYMENT",
+            `/shopping/${req.params.id}`
+        );
 
         res.json({
             message: "Compra anulada con exito",

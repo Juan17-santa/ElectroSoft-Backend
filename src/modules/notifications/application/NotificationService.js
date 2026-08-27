@@ -1,45 +1,63 @@
 import { Notification } from "../infrastructure/NotificationModel.js";
-import { getIO } from "../../../config/socket.js";
+import mongoose from "mongoose";
 
 class NotificationService {
-  /**
-   * Crea una notificación en la BD y la emite en vivo vía WebSockets.
-   */
   static async createNotification(title, description, type = "SYSTEM", link = null) {
     try {
-      const newNotification = await Notification.create({
+      return await Notification.create({
         title,
         description,
         type,
         link,
       });
-
-      try {
-        const io = getIO();
-        // Emitimos el evento a todos los clientes conectados
-        io.emit("new_notification", newNotification);
-      } catch (wsError) {
-        // Ignoramos el error si los WebSockets no están inicializados aún
-        console.error("Error emitiendo WebSocket (puede que aún no esté conectado):", wsError.message);
-      }
-
-      return newNotification;
     } catch (error) {
       console.error("Error al crear notificación:", error);
-      throw error;
+      return null;
     }
   }
 
-  /**
-   * Obtiene las últimas notificaciones ordenadas por fecha
-   */
-  static async getRecentNotifications(limit = 20) {
-    return await Notification.find().sort({ createdAt: -1 }).limit(limit);
+  static async getRecentNotifications({ limit = 20, afterCreatedAt = null, afterId = null } = {}) {
+    const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+
+    if (!afterCreatedAt) {
+      return await Notification.find().sort({ createdAt: -1, _id: -1 }).limit(safeLimit);
+    }
+
+    const cursorDate = new Date(afterCreatedAt);
+    if (Number.isNaN(cursorDate.getTime())) {
+      throw new Error("afterCreatedAt inválido");
+    }
+
+    const cursorId = afterId && mongoose.Types.ObjectId.isValid(afterId)
+      ? new mongoose.Types.ObjectId(afterId)
+      : null;
+    const filter = cursorId
+      ? { $or: [{ createdAt: { $gt: cursorDate } }, { createdAt: cursorDate, _id: { $gt: cursorId } }] }
+      : { createdAt: { $gt: cursorDate } };
+
+    return await Notification.find(filter)
+      .sort({ createdAt: 1, _id: 1 })
+      .limit(safeLimit);
   }
 
-  /**
-   * Marca las notificaciones como leídas
-   */
+  static async deleteById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new Error("ID de notificación inválido");
+    return await Notification.findByIdAndDelete(id);
+  }
+
+  static async deleteAll() {
+    return await Notification.deleteMany({});
+  }
+
+  static async markOneAsRead(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new Error("ID de notificación inválido");
+    return await Notification.findByIdAndUpdate(
+      id,
+      { isRead: true },
+      { new: true, runValidators: true },
+    );
+  }
+
   static async markAsRead() {
     return await Notification.updateMany({ isRead: false }, { isRead: true });
   }

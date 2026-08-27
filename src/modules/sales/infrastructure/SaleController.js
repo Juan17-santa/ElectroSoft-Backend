@@ -28,6 +28,7 @@ import SaleExternalCatalogGatewayMongo from "./SaleExternalCatalogGatewayMongo.j
 import SaleTransactionManagerMongo from "./SaleTransactionManagerMongo.js";
 import DevolutionRepositoryMongo from "../../devolutions/infrastructure/DevolutionRepositoryMongo.js";
 import PaymentRepositoryMongo from "../../payments/infrastructure/PaymentRepositoryMongo.js";
+import NotificationService from "../../notifications/application/NotificationService.js";
 
 const saleRepository = new SaleRepositoryMongo();
 const externalCatalogGateway = new SaleExternalCatalogGatewayMongo();
@@ -85,6 +86,13 @@ export const cancelSale = async (req, res) => {
             paymentRepository,
         );
         const result = await useCase.execute(id, motivo);
+
+        await NotificationService.createNotification(
+            "Venta Anulada",
+            `Se ha anulado la venta ${id}.`,
+            "SALE",
+            `/sales/${id}`
+        );
 
         res.json({
             message: "Venta anulada con éxito",
@@ -187,16 +195,16 @@ export const getMisEstadisticas = async (req, res) => {
 
         const ventas = await saleRepository.getMisEstadisticas(userId, Number(year), Number(month));
 
-        const totalVentas = ventas.reduce((acc, v) => acc + v.total, 0);
+        const totalVentas = ventas.reduce((acc, v) => acc + (v.montoPagado ?? 0), 0);
         const productosVendidos = ventas.reduce((acc, v) =>
             acc + v.productos.reduce((sum, p) => sum + p.cantidad, 0), 0);
         const ventasPorTipo = {
             Contado: ventas
                 .filter(v => v.tipoVenta === "Contado")
-                .reduce((acc, v) => acc + v.total, 0),
+                .reduce((acc, v) => acc + (v.montoPagado ?? 0), 0),
             Credito: ventas
                 .filter(v => v.tipoVenta === "Crédito" || v.tipoVenta === "Credito")
-                .reduce((acc, v) => acc + v.total, 0),
+                .reduce((acc, v) => acc + (v.montoPagado ?? 0), 0),
         };
 
         res.json({

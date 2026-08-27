@@ -14,6 +14,7 @@ import {
     sendUnexpectedError,
 } from "../../../shared/infrastructure/controllers/errorHandler.js";
 import mongoose from "mongoose";
+import NotificationService from "../../notifications/application/NotificationService.js";
 
 const devolutionRepository = new DevolutionRepositoryMongo();
 const transactionManager = new DevolutionTransactionManagerMongo();
@@ -39,6 +40,13 @@ export const createDevolution = async (req, res) => {
         );
         const result = await useCase.execute(req.body);
 
+        await NotificationService.createNotification(
+            "Devolución Registrada",
+            `Se ha registrado una devolución para la venta ${req.body.saleId}.`,
+            "SALE",
+            `/devolutions/${result._id}`
+        );
+
         res.status(201).json({
             message: "Devolucion registrada con exito",
             data: result,
@@ -62,6 +70,13 @@ export const createBatchDevolutions = async (req, res) => {
             saleRepository,
         );
         const result = await useCase.execute(saleId, devoluciones);
+
+        await NotificationService.createNotification(
+            "Devolución Registrada",
+            `Se han registrado devoluciones para la venta ${saleId}.`,
+            "SALE",
+            `/sales/${saleId}`
+        );
 
         res.status(201).json({
             message: "Devoluciones registradas con exito",

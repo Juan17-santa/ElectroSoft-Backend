@@ -22,6 +22,7 @@ import OrderRepositoryMongo from "./OrderRepositoryMongo.js";
 import ProductRepositoryMongo from "../../products/infrastructure/ProductRepositoryMongo.js";
 import { clientRepository } from "../../clients/infrastructure/ClientRepository.js";
 import CreateSaleUseCase from "../../sales/application/CreateSaleUseCase.js";
+import NotificationService from "../../notifications/application/NotificationService.js";
 import SaleRepositoryMongo from "../../sales/infrastructure/SaleRepositoryMongo.js";
 import SaleExternalCatalogGatewayMongo from "../../sales/infrastructure/SaleExternalCatalogGatewayMongo.js";
 import SaleTransactionManagerMongo from "../../sales/infrastructure/SaleTransactionManagerMongo.js";
@@ -82,6 +83,13 @@ export const cancelOrder = async (req, res) => {
         const useCase = new CancelOrderUseCase(orderRepository, productRepository);
         const result = await useCase.execute(id, cancelReason);
 
+        await NotificationService.createNotification(
+            "Pedido Anulado",
+            `Se ha anulado el pedido ${id}.`,
+            "SALE",
+            `/orders/${id}`
+        );
+
         res.json({ message: "Pedido anulado con éxito.", data: result });
     } catch (error) {
         sendControllerError(res, error, 400);
@@ -110,6 +118,14 @@ export const updateOrder = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: "ID inválido" });
         const useCase = new UpdateOrderUseCase(orderRepository, clientRepositoryInstance, productRepository);
         const result = await useCase.execute(id, req.body);
+
+        await NotificationService.createNotification(
+            "Pedido Actualizado",
+            `Se ha actualizado el pedido ${id}.`,
+            "SALE",
+            `/orders/${id}`
+        );
+
         res.json({ message: "Pedido actualizado con éxito.", data: result });
     } catch (error) {
         sendControllerError(res, error, 400);

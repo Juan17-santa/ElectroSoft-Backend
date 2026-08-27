@@ -23,6 +23,7 @@ import CancelPaymentUseCase from "../application/CancelPaymentUseCase.js";
 import PaymentRepositoryMongo from "./PaymentRepositoryMongo.js";
 import PaymentSaleGatewayMongo from "./PaymentSaleGatewayMongo.js";
 import PaymentTransactionManagerMongo from "./PaymentTransactionManagerMongo.js";
+import NotificationService from "../../notifications/application/NotificationService.js";
 
 const paymentRepository = new PaymentRepositoryMongo();
 const saleGateway = new PaymentSaleGatewayMongo();
@@ -33,6 +34,13 @@ export const createPayment = async (req, res) => {
     try {
         const useCase = new CreatePaymentUseCase(paymentRepository, saleGateway, transactionManager);
         const result = await useCase.execute(req.body);
+
+        await NotificationService.createNotification(
+            "Abono Registrado",
+            `Se ha registrado un abono de $${Number(req.body.monto).toLocaleString("es-CO")} para la venta ${req.body.ventaId}.`,
+            "PAYMENT",
+            `/sales/${req.body.ventaId}`
+        );
 
         res.status(201).json({
             message: "Pago registrado con éxito",
@@ -104,6 +112,13 @@ export const cancelPayment = async (req, res) => {
 
         const useCase = new CancelPaymentUseCase(paymentRepository, saleGateway);
         const result = await useCase.execute(id);
+
+        await NotificationService.createNotification(
+            "Abono Anulado",
+            `Se ha anulado el abono ${id}.`,
+            "PAYMENT",
+            `/payments/${id}`
+        );
 
         res.json({ message: "Pago anulado con éxito", data: result });
     } catch (error) {
