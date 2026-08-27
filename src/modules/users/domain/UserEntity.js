@@ -7,6 +7,9 @@ export default class UserEntity {
     if (!fullName || fullName.trim().length < 3) {
       throw new Error("El nombre completo es obligatorio y debe tener al menos 3 caracteres");
     }
+    if (fullName.trim().length > 40 || !/^[\p{L}\s]+$/u.test(fullName.trim()) || /\s{2,}/.test(fullName.trim())) {
+      throw new Error("El nombre completo solo puede contener letras y espacios, sin espacios dobles, y tener máximo 40 caracteres");
+    }
 
     if (!email || !UserEntity.isValidEmail(email)) {
       throw new Error("El email es obligatorio y debe tener un formato válido");
@@ -47,6 +50,6 @@ export default class UserEntity {
   }
 
   static isValidPhone(phone) {
-    return /^\d{7,15}$/.test(phone.trim());
+    return /^\d{8,14}$/.test(phone.trim());
   }
 }
