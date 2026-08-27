@@ -22,9 +22,16 @@ export default class UpdateUserUseCase {
 
     // 2. Validar y asignar campos opcionales
     if (fullName) {
-      if (fullName.trim().length < 3)
+      const normalizedName = fullName.trim();
+      if (normalizedName.length < 3)
         throw new Error("El nombre completo debe tener al menos 3 caracteres");
-      updateData.fullName = toTitleCase(fullName.trim()); // ← agregar
+      if (normalizedName.length > 40)
+        throw new Error("El nombre completo no puede superar 40 caracteres");
+      if (!/^[\p{L}\s]+$/u.test(normalizedName))
+        throw new Error("El nombre completo solo puede contener letras y espacios");
+      if (/\s{2,}/.test(normalizedName))
+        throw new Error("El nombre completo no puede contener espacios dobles");
+      updateData.fullName = toTitleCase(normalizedName);
     }
 
     if (email) {
@@ -37,8 +44,8 @@ export default class UpdateUserUseCase {
     }
 
     if (phone) {
-      if (!/^\d{7,15}$/.test(phone.trim()))
-        throw new Error("El teléfono debe tener entre 7 y 15 dígitos");
+      if (!/^\d{8,14}$/.test(phone.trim()))
+        throw new Error("El teléfono debe tener entre 8 y 14 dígitos");
       updateData.phone = phone.trim();
     }
 
@@ -55,8 +62,8 @@ export default class UpdateUserUseCase {
     }
 
     if (documentNumber) {
-      if (documentNumber.trim().length < 4)
-        throw new Error("El número de documento debe tener al menos 4 caracteres");
+      if (!/^\d{8,12}$/.test(documentNumber.trim()))
+        throw new Error("El documento debe tener entre 8 y 12 dígitos");
       const docTaken = await this.userRepository.findByDocument(documentNumber.trim());
       if (docTaken && docTaken._id.toString() !== id)
         throw new Error("El número de documento ya está registrado por otro usuario");
