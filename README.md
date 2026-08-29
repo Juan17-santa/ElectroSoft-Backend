@@ -175,7 +175,7 @@ DEFAULT_ADMIN_ROLE=Administrador
 | `MONGODB_URI`    | Cadena de conexión de MongoDB Atlas.                 |
 | `JWT_SECRET`     | Clave utilizada para firmar los tokens JWT.          |
 | `JWT_EXPIRES_IN` | Tiempo de expiración de los tokens de autenticación. |
-| `CLIENT_ORIGIN` | Origen permitido para la API y Socket.IO. Puede contener varios orígenes separados por comas. |
+| `CLIENT_ORIGIN` | Origen permitido para la API. Puede contener varios orígenes separados por comas. |
 | `DEFAULT_ADMIN_NAME` | Nombre del usuario administrador inicial. |
 | `DEFAULT_ADMIN_EMAIL` | Correo del usuario administrador inicial. |
 | `DEFAULT_ADMIN_PASSWORD` | Contraseña del usuario administrador inicial. |
