@@ -51,11 +51,12 @@ export const UserController = {
 
   update: async (req, res) => {
     try {
-      const user = await updateUser.execute(req.params.id, req.body);
+      const user = await updateUser.execute(req.params.id, req.body, req.user);
       res.json({ success: true, data: user });
     } catch (error) {
       const status =
         error.message === "Usuario no encontrado" ? 404 :
+          error.message === "No tienes permiso para editar este usuario" ? 403 :
           error.message.includes("ya está registrado") ? 409 : 400;
       res.status(status).json({ success: false, message: error.message });
     }
