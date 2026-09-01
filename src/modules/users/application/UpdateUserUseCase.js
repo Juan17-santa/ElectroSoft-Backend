@@ -8,10 +8,18 @@ export default class UpdateUserUseCase {
     this.documentTypeRepository = documentTypeRepository;
   }
 
-  async execute(id, { fullName, email, password, phone, documentType, documentNumber, role, avatarLetter, avatarColor, avatar }) {
+  async execute(id, { fullName, email, password, phone, documentType, documentNumber, role, avatarLetter, avatarColor, avatar }, authenticatedUser) {
     // 1. Verificar que el usuario existe
     const existing = await this.userRepository.findById(id);
     if (!existing) throw new Error("Usuario no encontrado");
+
+    // 2. Validar permisos: administrador puede editar a cualquiera, y cualquier usuario puede editarse a sí mismo
+    if (authenticatedUser && authenticatedUser.role !== "Administrador") {
+      const currentUserId = authenticatedUser._id?.toString?.() || authenticatedUser.id?.toString?.();
+      if (currentUserId !== id) {
+        throw new Error("No tienes permiso para editar este usuario");
+      }
+    }
 
     const updateData = {};
     
